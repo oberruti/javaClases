@@ -10,7 +10,7 @@ public class JugadorCampo extends Jugador {
   private Integer regate;
   private Integer defensa;
   private Integer fisico;
-
+  
   public JugadorCampo() {}
 
   public JugadorCampo(String nombre, String liga, String nacionalidad, String piernaBuena,
