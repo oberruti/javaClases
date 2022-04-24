@@ -1,30 +1,16 @@
 package com.javatp.javaTP.database.JugadorCampo;
 
-import org.springframework.data.annotation.Id;
+import com.javatp.javaTP.database.Jugador.Jugador;
 
 
-public class JugadorCampo {
-
-  @Id
-  private String id;
-
-  private String nombre;
-  private String liga;
-  private String nacionalidad;
-  private String posicion;
-  private String piernaBuena;
-  private Integer edad;
+public class JugadorCampo extends Jugador {
   private Integer ritmo;
   private Integer tiro;
   private Integer pase;
   private Integer regate;
   private Integer defensa;
   private Integer fisico;
-
-
-  private String clubID;
-  private String[] plantillaIDs;
-
+  
   public JugadorCampo() {}
 
   public JugadorCampo(String nombre, String liga, String nacionalidad, String piernaBuena,
@@ -44,62 +30,6 @@ public class JugadorCampo {
     this.fisico = fisico;
     this.plantillaIDs = plantillaIDs;
     this.clubID = clubID;
-  }
-
-  public String getId() {
-    return this.id;
-  }
-
-  public void setId(String id) {
-    this.id = id;
-  }
-
-  public String getNombre() {
-    return this.nombre;
-  }
-
-  public void setNombre(String nombre) {
-    this.nombre = nombre;
-  }
-
-  public String getLiga() {
-    return this.liga;
-  }
-
-  public void setLiga(String liga) {
-    this.liga = liga;
-  }
-
-  public String getNacionalidad() {
-    return this.nacionalidad;
-  }
-
-  public void setNacionalidad(String nacionalidad) {
-    this.nacionalidad = nacionalidad;
-  }
-
-  public String getPosicion() {
-    return this.posicion;
-  }
-
-  public void setPosicion(String posicion) {
-    this.posicion = posicion;
-  }
-
-  public String getPiernaBuena() {
-    return this.piernaBuena;
-  }
-
-  public void setPiernaBuena(String piernaBuena) {
-    this.piernaBuena = piernaBuena;
-  }
-
-  public Integer getEdad() {
-    return this.edad;
-  }
-
-  public void setEdad(Integer edad) {
-    this.edad = edad;
   }
 
   public Integer getRitmo() {
@@ -148,22 +78,6 @@ public class JugadorCampo {
 
   public void setFisico(Integer fisico) {
     this.fisico = fisico;
-  }
-
-  public String getClubID() {
-    return this.clubID;
-  }
-
-  public void setClubID(String clubID) {
-    this.clubID = clubID;
-  }
-
-  public String[] getPlantillaIDs() {
-    return this.plantillaIDs;
-  }
-
-  public void setPlantillaIDs(String[] plantillaIDs) {
-    this.plantillaIDs = plantillaIDs;
   }
 
   @Override
