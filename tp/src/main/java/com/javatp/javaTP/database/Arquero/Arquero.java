@@ -1,29 +1,17 @@
 package com.javatp.javaTP.database.Arquero;
 
-import org.springframework.data.annotation.Id;
+import com.javatp.javaTP.database.Jugador.Jugador;
 
 
-public class Arquero {
+public class Arquero extends Jugador {
 
-  @Id
-  private String id;
-
-  private String nombre;
-  private String liga;
-  private String nacionalidad;
   private String posicion = "Arquero";
-  private String piernaBuena;
-  private Integer edad;
   private Integer estiramiento;
   private Integer paradas;
   private Integer saque;
   private Integer referencia;
   private Integer velocidad;
   private Integer posicionamiento;
-
-
-  private String clubID;
-  private String[] plantillaIDs;
 
   public Arquero() {}
 
@@ -44,62 +32,6 @@ public class Arquero {
     this.posicionamiento = posicionamiento;
     this.plantillaIDs = plantillaIDs;
     this.clubID = clubID;
-  }
-
-  public String getId() {
-    return this.id;
-  }
-
-  public void setId(String id) {
-    this.id = id;
-  }
-
-  public String getNombre() {
-    return this.nombre;
-  }
-
-  public void setNombre(String nombre) {
-    this.nombre = nombre;
-  }
-
-  public String getLiga() {
-    return this.liga;
-  }
-
-  public void setLiga(String liga) {
-    this.liga = liga;
-  }
-
-  public String getNacionalidad() {
-    return this.nacionalidad;
-  }
-
-  public void setNacionalidad(String nacionalidad) {
-    this.nacionalidad = nacionalidad;
-  }
-
-  public String getPosicion() {
-    return this.posicion;
-  }
-
-  public void setPosicion(String posicion) {
-    this.posicion = posicion;
-  }
-
-  public String getPiernaBuena() {
-    return this.piernaBuena;
-  }
-
-  public void setPiernaBuena(String piernaBuena) {
-    this.piernaBuena = piernaBuena;
-  }
-
-  public Integer getEdad() {
-    return this.edad;
-  }
-
-  public void setEdad(Integer edad) {
-    this.edad = edad;
   }
 
   public Integer getEstiramiento() {
@@ -148,22 +80,6 @@ public class Arquero {
 
   public void setPosicionamiento(Integer posicionamiento) {
     this.posicionamiento = posicionamiento;
-  }
-
-  public String getClubID() {
-    return this.clubID;
-  }
-
-  public void setClubID(String clubID) {
-    this.clubID = clubID;
-  }
-
-  public String[] getPlantillaIDs() {
-    return this.plantillaIDs;
-  }
-
-  public void setPlantillaIDs(String[] plantillaIDs) {
-    this.plantillaIDs = plantillaIDs;
   }
 
   @Override
