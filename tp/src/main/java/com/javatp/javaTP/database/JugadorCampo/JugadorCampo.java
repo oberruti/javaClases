@@ -16,7 +16,7 @@ public class JugadorCampo extends Jugador {
   public JugadorCampo(String nombre, String liga, String nacionalidad, String piernaBuena,
   Integer edad, Integer ritmo, Integer tiro, Integer pase,
   Integer regate, Integer defensa, Integer fisico,
-  String clubID, String[] plantillaIDs) {
+  String clubID) {
     this.nombre = nombre;
     this.liga = liga;
     this.nacionalidad = nacionalidad;
@@ -28,7 +28,6 @@ public class JugadorCampo extends Jugador {
     this.regate = regate;
     this.defensa = defensa;
     this.fisico = fisico;
-    this.plantillaIDs = plantillaIDs;
     this.clubID = clubID;
   }
 
@@ -83,8 +82,8 @@ public class JugadorCampo extends Jugador {
   @Override
   public String toString() {
     return String.format(
-        "Club[id=%s, nombre='%s', liga='%s', nacionalidad='%s', posicion='%s', piernaBuena='%s', edad='%s', ritmo='%s', tiro='%s', pase='%s', regate='%s', defensa='%s', fisico='%s', clubID='%s', plantillaIDs='%s']",
-        id, nombre, liga, nacionalidad, posicion, piernaBuena, edad, ritmo, tiro, pase, regate, defensa, fisico, clubID, plantillaIDs);
+        "Club[id=%s, nombre='%s', liga='%s', nacionalidad='%s', posicion='%s', piernaBuena='%s', edad='%s', ritmo='%s', tiro='%s', pase='%s', regate='%s', defensa='%s', fisico='%s', clubID='%s']",
+        id, nombre, liga, nacionalidad, posicion, piernaBuena, edad, ritmo, tiro, pase, regate, defensa, fisico, clubID);
   }
 
 }

@@ -1,5 +1,6 @@
 package com.javatp.javaTP.database.Jugador;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -12,5 +13,9 @@ public interface JugadorRepository extends MongoRepository<Jugador, String> {
 
   @Query("{id :?0}")
   Optional<Jugador> getJugadorById(String id);
+
+  ArrayList<Jugador> findByClubID(String ClubID);
+
+  Optional<Jugador> findByIdAndClubID(String id, String ClubID);
 
 }

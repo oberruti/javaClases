@@ -13,4 +13,7 @@ public interface ClubRepository extends MongoRepository<Club, String> {
   @Query("{id :?0}")
   Optional<Club> getClubById(String id);
 
+  @Query("{userID :?0}")
+  Optional<Club> getClubByUserId(String userID);
+
 }

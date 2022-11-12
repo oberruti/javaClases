@@ -21,7 +21,7 @@ public class Arquero extends Jugador {
   public Arquero(String nombre, String liga, String nacionalidad, String piernaBuena,
   Integer edad, Integer estiramiento, Integer paradas, Integer saque,
   Integer referencia, Integer velocidad, Integer posicionamiento,
-  String clubID, String[] plantillaIDs) {
+  String clubID) {
     this.nombre = nombre;
     this.liga = liga;
     this.nacionalidad = nacionalidad;
@@ -33,7 +33,6 @@ public class Arquero extends Jugador {
     this.referencia = referencia;
     this.velocidad = velocidad;
     this.posicionamiento = posicionamiento;
-    this.plantillaIDs = plantillaIDs;
     this.clubID = clubID;
   }
 
@@ -88,8 +87,8 @@ public class Arquero extends Jugador {
   @Override
   public String toString() {
     return String.format(
-        "Club[id=%s, nombre='%s', liga='%s', nacionalidad='%s', posicion='%s', piernaBuena='%s', edad='%s', estiramiento='%s', paradas='%s', saque='%s', referencia='%s', velocidad='%s', posicionamiento='%s', clubID='%s', plantillaIDs='%s']",
-        id, nombre, liga, nacionalidad, posicion, piernaBuena, edad, estiramiento, paradas, saque, referencia, velocidad, posicionamiento, clubID, plantillaIDs);
+        "Club[id=%s, nombre='%s', liga='%s', nacionalidad='%s', posicion='%s', piernaBuena='%s', edad='%s', estiramiento='%s', paradas='%s', saque='%s', referencia='%s', velocidad='%s', posicionamiento='%s', clubID='%s']",
+        id, nombre, liga, nacionalidad, posicion, piernaBuena, edad, estiramiento, paradas, saque, referencia, velocidad, posicionamiento, clubID);
   }
 
 }

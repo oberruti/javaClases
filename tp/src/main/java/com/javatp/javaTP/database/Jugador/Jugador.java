@@ -2,7 +2,6 @@ package com.javatp.javaTP.database.Jugador;
 
 import org.springframework.data.annotation.Id;
 
-
 public class Jugador {
 
   @Id
@@ -17,18 +16,16 @@ public class Jugador {
 
 
   protected String clubID;
-  protected String[] plantillaIDs;
 
   public Jugador() {}
 
   public Jugador(String nombre, String liga, String nacionalidad, String piernaBuena, Integer edad,
-  String clubID, String[] plantillaIDs) {
+  String clubID) {
     this.nombre = nombre;
     this.liga = liga;
     this.nacionalidad = nacionalidad;
     this.piernaBuena = piernaBuena;
     this.edad = edad;
-    this.plantillaIDs = plantillaIDs;
     this.clubID = clubID;
   }
 
@@ -96,19 +93,11 @@ public class Jugador {
     this.clubID = clubID;
   }
 
-  public String[] getPlantillaIDs() {
-    return this.plantillaIDs;
-  }
-
-  public void setPlantillaIDs(String[] plantillaIDs) {
-    this.plantillaIDs = plantillaIDs;
-  }
-
   @Override
   public String toString() {
     return String.format(
-        "Club[id=%s, nombre='%s', liga='%s', nacionalidad='%s', posicion='%s', piernaBuena='%s', edad='%s', clubID='%s', plantillaIDs='%s']",
-        id, nombre, liga, nacionalidad, posicion, piernaBuena, edad, clubID, plantillaIDs);
+        "Jugador[id=%s, nombre='%s', liga='%s', nacionalidad='%s', posicion='%s', piernaBuena='%s', edad='%s', clubID='%s']",
+        id, nombre, liga, nacionalidad, posicion, piernaBuena, edad, clubID);
   }
 
 }
