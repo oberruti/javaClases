@@ -283,6 +283,7 @@ function JugadoresPage({ jugadores, club, token }: JugadoresPageProps) {
   const [data, setData] = useState(jugadoresYClub);
   const [isEditing, setIsEditing] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   const [id, setId] = useState("");
   const [nombre, setNombre] = useState("");
@@ -336,6 +337,7 @@ function JugadoresPage({ jugadores, club, token }: JugadoresPageProps) {
     setPosicion("");
     setPiernaBuena("");
     setEdad("");
+    setErrorMessage("");
     setIsAdding(false);
     setIsEditing(false);
   };
@@ -365,9 +367,10 @@ function JugadoresPage({ jugadores, club, token }: JugadoresPageProps) {
       );
       const data = res.json();
       if (data) {
+        onCancel();
         router.reload();
       } else {
-        router.reload();
+        setErrorMessage("No se pudo guardar el jugador.");
       }
     } else {
       const jugador = {
@@ -392,12 +395,12 @@ function JugadoresPage({ jugadores, club, token }: JugadoresPageProps) {
       );
       const data = res.json();
       if (data) {
+        onCancel();
         router.reload();
       } else {
-        router.reload();
+        setErrorMessage("No se pudo guardar el jugador.");
       }
     }
-    onCancel();
   };
 
   const onDeleteSelection = async () => {
@@ -414,10 +417,10 @@ function JugadoresPage({ jugadores, club, token }: JugadoresPageProps) {
       if (eliminado) {
         router.reload();
       } else {
-        console.log("error", eliminado);
+        setErrorMessage("No se pudo eliminar el jugador.");
       }
     } catch (e) {
-      console.log(e);
+      setErrorMessage(e.errorMessage);
     }
   };
 
@@ -619,6 +622,7 @@ function JugadoresPage({ jugadores, club, token }: JugadoresPageProps) {
                 setEdad(event.target.value);
               }}
             />
+            <div style={styles.errorMessage}>{errorMessage}</div>
             <HorizontalStack style={{ display: "flex", alignSelf: "center" }}>
               <button style={styles.confirm} onClick={onConfirmSelected}>
                 Confirmar
