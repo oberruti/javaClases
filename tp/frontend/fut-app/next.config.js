@@ -19,9 +19,10 @@ module.exports = {
     ];
   },
   env: {
-    // MONGO_URI:
-    //   'mongodb+srv://octavioberruti:yIqDm1NuicLVbTOQ@autogestion-alumnos.vicet.mongodb.net/alumnos?retryWrites=true&w=majority',
-    // JWT_SECRET: 'INp8IvRIyGMcoVAgFGRA61DdBglwssqwrTzEgz8PSYA',
+    NEXTAUTH_URL: 'http://localhost:3000',
+    MONGO_URI:
+      'mongodb+srv://octacai:okta1983@database.zkmkf.mongodb.net/Database?retryWrites=true&w=majority',
+    JWT_SECRET: 'INp8IvRIyGMcoVAgFGRA61DdBglwssqwrTzEgz8PSYA',
   },
   //   webpack: (config, { buildId, dev, isServer, defaultLoaders, webpack }) => {
   //     config.node = {

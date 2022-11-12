@@ -5,16 +5,16 @@ import {
   HorizontalStack,
   VerticalStack,
 } from '../../../common/components/flex';
-// import { getSession, signIn, useSession } from 'next-auth/client';
 import { COLORS, FONTS } from '../../../styles/style';
 import { GetServerSideProps } from 'next';
+import { getSession, signIn, useSession } from 'next-auth/react';
+import { PAGES } from '../../../common/components/page/utils';
 
 const Login = (): JSX.Element | null => {
-  //   const [session, loading] = useSession();
+  const { status } = useSession();
   const router = useRouter();
 
-  //   if (typeof window !== 'undefined' && loading) return null;
-  if (typeof window !== 'undefined') return null;
+  if (typeof window !== 'undefined' && status === 'loading') return null;
 
   const { fontSize, fontFamily, fontWeight } = FONTS.title;
 
@@ -112,10 +112,9 @@ const SignInButton = (): JSX.Element => {
       <button
         style={style}
         onClick={() =>
-          //   signIn('auth0', {
-          //     callbackUrl: 'https://autogestionalumnos.vercel.app/app/dashboard',
-          //   })
-          {}
+          signIn('google', {
+            callbackUrl: `${process.env.NEXTAUTH_URL}/app/${PAGES.DASHBOARD}`,
+          })
         }
       >
         Sign In
@@ -125,10 +124,9 @@ const SignInButton = (): JSX.Element => {
 };
 
 export const getServerSideProps: GetServerSideProps = async ({ req, res }) => {
-  //   const session = await getSession({ req });
+  const session = await getSession({ req });
 
-  //   if (session) {
-  if (true) {
+  if (session) {
     // If user, redirect to dashboard
     return {
       props: {},

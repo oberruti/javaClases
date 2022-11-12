@@ -5,8 +5,10 @@ import { PAGES } from './utils';
 import { HorizontalStack } from '../flex';
 import { JustChildren } from '../../utils/tsTypes';
 import { COLORS } from '../../../styles/style';
+import { signOut } from 'next-auth/react';
+import {v4} from 'uuid'
 
-export function Menu(props: { name: string }): JSX.Element {
+export function Menu(props: { name: string; id: string }): JSX.Element {
   const dimensions: CSSProperties = {
     marginTop: '20px',
     alignSelf: 'center',
@@ -23,13 +25,42 @@ export function Menu(props: { name: string }): JSX.Element {
     cursor: 'pointer',
   };
   return (
-    <div style={dimensions}>
+    <div style={dimensions} key={props.id}>
       <Link href={props.name}>
         <div style={linkStyle}>{props.name.toUpperCase()}</div>
       </Link>
     </div>
   );
 }
+
+export const Logout = (): JSX.Element => {
+  const dimensions: CSSProperties = {
+    marginTop: '20px',
+    alignSelf: 'center',
+    borderBottomColor: 'white',
+    borderBottomStyle: 'solid',
+    borderBottomWidth: '1px',
+  };
+  const linkStyle: CSSProperties = {
+    color: 'white',
+    textDecoration: 'none',
+    textDecorationColor: 'white',
+    textEmphasisColor: 'white',
+    cursor: 'pointer',
+  };
+  return (
+    <div
+      style={dimensions}
+      onClick={() =>
+        signOut({
+          callbackUrl: `${process.env.NEXTAUTH_URL}/acc/login`,
+        })
+      }
+    >
+      <div style={linkStyle}>LOGOUT</div>
+    </div>
+  );
+};
 
 export function Navigation(): JSX.Element {
   const style: CSSProperties = {
@@ -46,8 +77,9 @@ export function Navigation(): JSX.Element {
   return (
     <div style={style}>
       {Object.values(PAGES).map((page) => (
-        <Menu name={page} />
+        <Menu name={page} id={v4()} />
       ))}
+      <Logout />
     </div>
   );
 }
