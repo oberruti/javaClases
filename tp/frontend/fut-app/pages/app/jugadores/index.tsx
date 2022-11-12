@@ -198,7 +198,7 @@ interface Club {
   userID: string;
 }
 
-interface Jugador {
+export interface Jugador {
   id: string;
   nombre: string;
   liga: string;
@@ -209,7 +209,7 @@ interface Jugador {
   clubID: string;
 }
 
-type Jugadores = Jugador[];
+export type Jugadores = Jugador[];
 
 type JugadoresPageProps = {
   jugadores: Jugadores;
@@ -370,7 +370,7 @@ function JugadoresPage({ jugadores, club, token }: JugadoresPageProps) {
           },
         }
       );
-      const data = res.json();
+      const data = await res.json();
       if (data) {
         onCancel();
         router.reload();
@@ -397,7 +397,7 @@ function JugadoresPage({ jugadores, club, token }: JugadoresPageProps) {
           },
         }
       );
-      const data = res.json();
+      const data = await res.json();
       if (data) {
         onCancel();
         router.reload();

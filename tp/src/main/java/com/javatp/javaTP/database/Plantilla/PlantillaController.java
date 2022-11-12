@@ -84,6 +84,7 @@ public class PlantillaController {
         return (Optional<Plantilla>) plantillaRepository.findByIdAndClubID("1", "1");
     }
 
+    @CrossOrigin("*")
     @GetMapping(path = "/{id}/jugadores/query")
     public ArrayList<Jugador> getJugadoresByPlantillaId(@PathVariable("id") String id, @RequestParam(name = "sessionToken", required = true ) String sessionToken ) {
         try {
