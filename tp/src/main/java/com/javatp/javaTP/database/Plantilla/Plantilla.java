@@ -11,16 +11,17 @@ public class Plantilla {
   private String nombre;
   private String tactica;
   private Boolean esTitular;
-
+  private String[] jugadoresIDs;
 
   private String clubID;
 
   public Plantilla() {}
 
-  public Plantilla(String nombre, String tactica, Boolean esTitular, String clubID) {
+  public Plantilla(String nombre, String tactica, Boolean esTitular, String[] jugadoresIds, String clubID) {
     this.nombre = nombre;
     this.tactica = tactica;
     this.esTitular = esTitular;
+    this.jugadoresIDs = jugadoresIds;
     this.clubID = clubID;
   }
 
@@ -62,6 +63,14 @@ public class Plantilla {
 
   public void setClubID(String clubID) {
     this.clubID = clubID;
+  }
+
+  public String[] getJugadoresIDs() {
+    return this.jugadoresIDs;
+  }
+
+  public void setJugadoresIDs(String[] jugadoresIDs) {
+    this.jugadoresIDs = jugadoresIDs;
   }
 
   @Override
