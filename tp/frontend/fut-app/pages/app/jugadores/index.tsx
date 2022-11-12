@@ -8,6 +8,7 @@ import {
   flexRender,
   getCoreRowModel,
   getFilteredRowModel,
+  RowSelectionState,
   Table,
   useReactTable,
 } from "@tanstack/react-table";
@@ -206,7 +207,6 @@ interface Jugador {
   piernaBuena: string;
   edad: number;
   clubID: string;
-  plantillaIDs: string[];
 }
 
 type Jugadores = Jugador[];
@@ -296,6 +296,11 @@ function JugadoresPage({ jugadores, club, token }: JugadoresPageProps) {
   const columns = useMemo(() => COLUMNS, []);
   const [rowSelection, setRowSelection] = useState({});
 
+  const onRowSelectionChange = (rowSelection: RowSelectionState) => {
+    onCancel();
+    setRowSelection(rowSelection);
+  };
+
   const table = useReactTable({
     data,
     columns,
@@ -303,7 +308,7 @@ function JugadoresPage({ jugadores, club, token }: JugadoresPageProps) {
       rowSelection,
     },
     enableMultiRowSelection: false,
-    onRowSelectionChange: setRowSelection,
+    onRowSelectionChange,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
   });
@@ -325,6 +330,7 @@ function JugadoresPage({ jugadores, club, token }: JugadoresPageProps) {
   };
 
   const onAdding = () => {
+    onRowSelectionChange({});
     onCancel();
     setIsAdding(true);
   };
@@ -353,7 +359,6 @@ function JugadoresPage({ jugadores, club, token }: JugadoresPageProps) {
         posicion,
         piernaBuena,
         clubID: club.id,
-        plantillaIds: [],
       };
       const res = await fetch(
         `http://localhost:8080/jugador/query?sessionToken=${token}`,
@@ -381,7 +386,6 @@ function JugadoresPage({ jugadores, club, token }: JugadoresPageProps) {
         posicion,
         piernaBuena,
         clubID: club.id,
-        plantillaIds: [],
       };
       const res = await fetch(
         `http://localhost:8080/jugador/query?sessionToken=${token}`,
