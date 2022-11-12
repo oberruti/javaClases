@@ -1,0 +1,15 @@
+{
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Spring Boot-JavaTpApplication<javaTP>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "com.javatp.javaTP.JavaTpApplication",
+            "projectName": "javaTP",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env",
+            "console": "internalConsole"
+        }
+    ]
+}

@@ -1,10 +1,13 @@
 package com.javatp.javaTP.database.Arquero;
 
+import org.springframework.data.mongodb.core.mapping.Field;
+
 import com.javatp.javaTP.database.Jugador.Jugador;
 
 
 public class Arquero extends Jugador {
 
+  @Field("childPosicion")
   private String posicion = "Arquero";
   private Integer estiramiento;
   private Integer paradas;
