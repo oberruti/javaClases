@@ -399,7 +399,7 @@ function JugadoresPage({ jugadores, club, token }: JugadoresPageProps) {
         clubID: club.id,
       };
       const res = await fetch(
-        `https://java-tp-oberruti.herokuapp.com/jugador/query?sessionToken=${token}`,
+        `${process.env.BACKEND_URL}/jugador/query?sessionToken=${token}`,
         {
           method: "POST",
           body: JSON.stringify(jugador),
@@ -426,7 +426,7 @@ function JugadoresPage({ jugadores, club, token }: JugadoresPageProps) {
         clubID: club.id,
       };
       const res = await fetch(
-        `https://java-tp-oberruti.herokuapp.com/jugador/query?sessionToken=${token}`,
+        `${process.env.BACKEND_URL}/jugador/query?sessionToken=${token}`,
         {
           method: "POST",
           body: JSON.stringify(jugador),
@@ -450,7 +450,7 @@ function JugadoresPage({ jugadores, club, token }: JugadoresPageProps) {
     console.log("id", id);
     try {
       const resEliminarJugadores = await fetch(
-        `https://java-tp-oberruti.herokuapp.com/jugador/${id}/query?sessionToken=${token}`,
+        `${process.env.BACKEND_URL}/jugador/${id}/query?sessionToken=${token}`,
         {
           method: "delete",
         }
@@ -715,12 +715,12 @@ export const getServerSideProps: GetServerSideProps = async ({
 
   const token = await getToken({ req, raw: true });
   const resJugadores = await fetch(
-    `https://java-tp-oberruti.herokuapp.com/jugador/query?sessionToken=${token}`
+    `${process.env.BACKEND_URL}/jugador/query?sessionToken=${token}`
   );
   const jugadores = await resJugadores.json();
 
   const resClub = await fetch(
-    `https://java-tp-oberruti.herokuapp.com/club/query?sessionToken=${token}`
+    `${process.env.BACKEND_URL}/club/query?sessionToken=${token}`
   );
   const club = await resClub.json();
 

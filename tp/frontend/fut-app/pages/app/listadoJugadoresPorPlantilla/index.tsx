@@ -372,18 +372,18 @@ export const getServerSideProps: GetServerSideProps = async ({
 
   const token = await getToken({ req, raw: true });
   const resPlantillas = await fetch(
-    `https://java-tp-oberruti.herokuapp.com/plantilla/query?sessionToken=${token}`
+    `${process.env.BACKEND_URL}/plantilla/query?sessionToken=${token}`
   );
   const plantillas = await resPlantillas.json();
 
   const resClub = await fetch(
-    `https://java-tp-oberruti.herokuapp.com/club/query?sessionToken=${token}`
+    `${process.env.BACKEND_URL}/club/query?sessionToken=${token}`
   );
   const club = await resClub.json();
 
   const getJugadoresByPlantillaID = async (id: String) => {
     const jugadoresByPlantillaIdRes = await fetch(
-      `https://java-tp-oberruti.herokuapp.com/plantilla/${id}/jugadores/query?sessionToken=${token}`
+      `${process.env.BACKEND_URL}/plantilla/${id}/jugadores/query?sessionToken=${token}`
     );
     const jugadoresByPlantillaId: Jugadores =
       await jugadoresByPlantillaIdRes.json();
