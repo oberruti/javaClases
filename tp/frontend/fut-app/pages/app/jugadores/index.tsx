@@ -21,6 +21,41 @@ import {
   VerticalStack,
 } from "../../../common/components/flex";
 import { StyleMap } from "../../../common/utils/tsTypes";
+import { DropdownList } from "react-widgets";
+
+const PIERNAS = [
+  {
+    id: "derecha",
+    value: "derecha",
+  },
+  {
+    id: "izquierda",
+    value: "izquierda",
+  },
+  {
+    id: "ambas",
+    value: "ambas",
+  },
+];
+
+export const POSICIONES = [
+  {
+    id: "arquero",
+    value: "arquero",
+  },
+  {
+    id: "defensor",
+    value: "defensor",
+  },
+  {
+    id: "mediocampista",
+    value: "mediocampista",
+  },
+  {
+    id: "delantero",
+    value: "delantero",
+  },
+];
 
 const styles: StyleMap = {
   input: {
@@ -179,7 +214,7 @@ function Filter({
   );
 }
 
-type JugadorRow = {
+export type JugadorRow = {
   id: string;
   nombre: string;
   liga: string;
@@ -198,7 +233,7 @@ interface Club {
   userID: string;
 }
 
-interface Jugador {
+export interface Jugador {
   id: string;
   nombre: string;
   liga: string;
@@ -209,7 +244,7 @@ interface Jugador {
   clubID: string;
 }
 
-type Jugadores = Jugador[];
+export type Jugadores = Jugador[];
 
 type JugadoresPageProps = {
   jugadores: Jugadores;
@@ -289,8 +324,11 @@ function JugadoresPage({ jugadores, club, token }: JugadoresPageProps) {
   const [nombre, setNombre] = useState("");
   const [liga, setLiga] = useState("");
   const [nacionalidad, setNacionalidad] = useState("");
-  const [posicion, setPosicion] = useState("");
-  const [piernaBuena, setPiernaBuena] = useState("");
+  const [posicion, setPosicion] = useState<{ id: string; value: string }>();
+  const [piernaBuena, setPiernaBuena] = useState<{
+    id: string;
+    value: string;
+  }>();
   const [edad, setEdad] = useState("");
 
   const columns = useMemo(() => COLUMNS, []);
@@ -322,8 +360,8 @@ function JugadoresPage({ jugadores, club, token }: JugadoresPageProps) {
     setNombre(row.nombre);
     setLiga(row.liga);
     setNacionalidad(row.nacionalidad);
-    setPosicion(row.posicion);
-    setPiernaBuena(row.piernaBuena);
+    setPosicion(POSICIONES.find((value) => value.value === row.posicion));
+    setPiernaBuena(PIERNAS.find((value) => value.value === row.piernaBuena));
     setEdad(row.edad);
     setIsAdding(false);
     setIsEditing(true);
@@ -340,8 +378,8 @@ function JugadoresPage({ jugadores, club, token }: JugadoresPageProps) {
     setNombre("");
     setLiga("");
     setNacionalidad("");
-    setPosicion("");
-    setPiernaBuena("");
+    setPosicion(undefined);
+    setPiernaBuena(undefined);
     setEdad("");
     setErrorMessage("");
     setIsAdding(false);
@@ -356,8 +394,8 @@ function JugadoresPage({ jugadores, club, token }: JugadoresPageProps) {
         edad: Number.parseInt(edad),
         nacionalidad,
         liga,
-        posicion,
-        piernaBuena,
+        posicion: posicion.value,
+        piernaBuena: piernaBuena.value,
         clubID: club.id,
       };
       const res = await fetch(
@@ -370,7 +408,7 @@ function JugadoresPage({ jugadores, club, token }: JugadoresPageProps) {
           },
         }
       );
-      const data = res.json();
+      const data = await res.json();
       if (data) {
         onCancel();
         router.reload();
@@ -383,8 +421,8 @@ function JugadoresPage({ jugadores, club, token }: JugadoresPageProps) {
         edad: Number.parseInt(edad),
         nacionalidad,
         liga,
-        posicion,
-        piernaBuena,
+        posicion: posicion.value,
+        piernaBuena: piernaBuena.value,
         clubID: club.id,
       };
       const res = await fetch(
@@ -397,7 +435,7 @@ function JugadoresPage({ jugadores, club, token }: JugadoresPageProps) {
           },
         }
       );
-      const data = res.json();
+      const data = await res.json();
       if (data) {
         onCancel();
         router.reload();
@@ -592,30 +630,46 @@ function JugadoresPage({ jugadores, club, token }: JugadoresPageProps) {
                 setNacionalidad(event.target.value);
               }}
             />
-            <div style={styles.maybeTitle}>
-              {posicion == "" ? <></> : "Posicion"}
-            </div>
-            <input
-              style={styles.input}
-              placeholder="Posicion"
-              name="posicion"
-              value={posicion}
-              onChange={(event) => {
-                setPosicion(event.target.value);
+            <div style={styles.maybeTitle}>Posicion</div>
+            <div
+              style={{
+                minWidth: "50%",
+                width: "50%",
+                height: "100px",
+                display: "flex",
+                alignContent: "center",
+                alignItems: "center",
+                alignSelf: "center",
               }}
-            />
-            <div style={styles.maybeTitle}>
-              {piernaBuena == "" ? <></> : "Pierna buena"}
+            >
+              <DropdownList
+                data={POSICIONES}
+                dataKey="id"
+                textField="value"
+                value={posicion}
+                onChange={setPosicion}
+              />
             </div>
-            <input
-              style={styles.input}
-              placeholder="Pierna buena"
-              name="piernaBuena"
-              value={piernaBuena}
-              onChange={(event) => {
-                setPiernaBuena(event.target.value);
+            <div style={styles.maybeTitle}>Pierna Buena</div>
+            <div
+              style={{
+                minWidth: "50%",
+                width: "50%",
+                height: "100px",
+                display: "flex",
+                alignContent: "center",
+                alignItems: "center",
+                alignSelf: "center",
               }}
-            />
+            >
+              <DropdownList
+                data={PIERNAS}
+                dataKey="id"
+                textField="value"
+                value={piernaBuena}
+                onChange={setPiernaBuena}
+              />
+            </div>
             <div style={styles.maybeTitle}>{edad == "" ? <></> : "Edad"}</div>
             <input
               style={styles.input}

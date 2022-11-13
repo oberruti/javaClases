@@ -1,33 +1,39 @@
-import React, { CSSProperties } from 'react';
+import React, { CSSProperties } from "react";
 
-import Link from 'next/link';
-import { PAGES } from './utils';
-import { HorizontalStack } from '../flex';
-import { JustChildren } from '../../utils/tsTypes';
-import { COLORS } from '../../../styles/style';
-import { signOut } from 'next-auth/react';
-import {v4} from 'uuid'
+import Link from "next/link";
+import { PAGES } from "./utils";
+import { HorizontalStack } from "../flex";
+import { JustChildren } from "../../utils/tsTypes";
+import { COLORS } from "../../../styles/style";
+import { signOut } from "next-auth/react";
+import { v4 } from "uuid";
 
 export function Menu(props: { name: string; id: string }): JSX.Element {
   const dimensions: CSSProperties = {
-    marginTop: '20px',
-    alignSelf: 'center',
-    borderBottomColor: 'white',
-    borderBottomStyle: 'solid',
-    borderBottomWidth: '1px',
+    marginTop: "20px",
+    alignSelf: "center",
+    borderBottomColor: "white",
+    borderBottomStyle: "solid",
+    borderBottomWidth: "1px",
   };
 
   const linkStyle: CSSProperties = {
-    color: 'white',
-    textDecoration: 'none',
-    textDecorationColor: 'white',
-    textEmphasisColor: 'white',
-    cursor: 'pointer',
+    color: "white",
+    textDecoration: "none",
+    textDecorationColor: "white",
+    textEmphasisColor: "white",
+    cursor: "pointer",
   };
   return (
     <div style={dimensions} key={props.id}>
       <Link href={props.name}>
-        <div style={linkStyle}>{props.name.toUpperCase()}</div>
+        <div style={linkStyle}>
+          {props.name === "listadoJugadoresPorPlantilla"
+            ? "Listado Jug".toUpperCase()
+            : props.name === "jugadorIdeal"
+            ? "Jugador Ideal".toUpperCase()
+            : props.name.toUpperCase()}
+        </div>
       </Link>
     </div>
   );
@@ -35,18 +41,18 @@ export function Menu(props: { name: string; id: string }): JSX.Element {
 
 export const Logout = (): JSX.Element => {
   const dimensions: CSSProperties = {
-    marginTop: '20px',
-    alignSelf: 'center',
-    borderBottomColor: 'white',
-    borderBottomStyle: 'solid',
-    borderBottomWidth: '1px',
+    marginTop: "20px",
+    alignSelf: "center",
+    borderBottomColor: "white",
+    borderBottomStyle: "solid",
+    borderBottomWidth: "1px",
   };
   const linkStyle: CSSProperties = {
-    color: 'white',
-    textDecoration: 'none',
-    textDecorationColor: 'white',
-    textEmphasisColor: 'white',
-    cursor: 'pointer',
+    color: "white",
+    textDecoration: "none",
+    textDecorationColor: "white",
+    textEmphasisColor: "white",
+    cursor: "pointer",
   };
   return (
     <div
@@ -65,14 +71,14 @@ export const Logout = (): JSX.Element => {
 export function Navigation(): JSX.Element {
   const style: CSSProperties = {
     backgroundColor: COLORS.blue,
-    width: '150px',
-    height: 'auto',
-    minHeight: '100%',
-    display: 'flex',
-    flexDirection: 'column',
-    borderRightStyle: 'solid',
+    width: "150px",
+    height: "auto",
+    minHeight: "100%",
+    display: "flex",
+    flexDirection: "column",
+    borderRightStyle: "solid",
     borderRightColor: COLORS.green,
-    borderRightWidth: '1px',
+    borderRightWidth: "1px",
   };
   return (
     <div style={style}>
@@ -87,25 +93,25 @@ export function Navigation(): JSX.Element {
 function AppContent(props: JustChildren): JSX.Element {
   const style: CSSProperties = {
     backgroundColor: COLORS.blue,
-    width: 'calc(100% - 150px)',
-    minWidth: '1280px',
+    width: "calc(100% - 150px)",
+    minWidth: "1280px",
   };
   return <div style={style}>{props.children}</div>;
 }
 
 export const Layout = (props: JustChildren): JSX.Element => {
   const style: CSSProperties = {
-    position: 'absolute',
+    position: "absolute",
     backgroundColor: COLORS.blue,
-    height: 'auto',
-    minHeight: 'calc(100% - 2px)',
-    minWidth: 'calc(100% - 3px)',
-    width: 'calc(100% - 3px)',
+    height: "auto",
+    minHeight: "calc(100% - 2px)",
+    minWidth: "calc(100% - 3px)",
+    width: "calc(100% - 3px)",
     top: 0,
     left: 0,
-    borderStyle: 'solid',
+    borderStyle: "solid",
     borderColor: COLORS.green,
-    borderWidth: '1px',
+    borderWidth: "1px",
   };
   return (
     <HorizontalStack style={style}>
