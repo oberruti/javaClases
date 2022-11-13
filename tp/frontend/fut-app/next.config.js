@@ -19,7 +19,7 @@ module.exports = {
     ];
   },
   env: {
-    NEXTAUTH_URL: 'http://localhost:3000',
+    NEXTAUTH_URL: 'https://java-clases.vercel.app',
     MONGO_URI:
       'mongodb+srv://octacai:okta1983@database.zkmkf.mongodb.net/Database?retryWrites=true&w=majority',
     JWT_SECRET: 'INp8IvRIyGMcoVAgFGRA61DdBglwssqwrTzEgz8PSYA',
