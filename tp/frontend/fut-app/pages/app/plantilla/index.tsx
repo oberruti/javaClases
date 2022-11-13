@@ -385,7 +385,7 @@ function PlantillaPage({
         jugadoresIDs: jugadores.map((jugador) => jugador.id),
       };
       const res = await fetch(
-        `http://localhost:8080/plantilla/query?sessionToken=${token}`,
+        `${process.env.BACKEND_URL}/plantilla/query?sessionToken=${token}`,
         {
           method: "POST",
           body: JSON.stringify(plantilla),
@@ -410,7 +410,7 @@ function PlantillaPage({
         jugadoresIDs: jugadores.map((jugador) => jugador.id),
       };
       const res = await fetch(
-        `http://localhost:8080/plantilla/query?sessionToken=${token}`,
+        `${process.env.BACKEND_URL}/plantilla/query?sessionToken=${token}`,
         {
           method: "POST",
           body: JSON.stringify(plantilla),
@@ -434,7 +434,7 @@ function PlantillaPage({
     console.log("id", id);
     try {
       const resEliminarPlantilla = await fetch(
-        `http://localhost:8080/plantilla/${id}/query?sessionToken=${token}`,
+        `${process.env.BACKEND_URL}/plantilla/${id}/query?sessionToken=${token}`,
         {
           method: "delete",
         }
@@ -707,18 +707,18 @@ export const getServerSideProps: GetServerSideProps = async ({
 
   const token = await getToken({ req, raw: true });
   const resPlantillas = await fetch(
-    `http://localhost:8080/plantilla/query?sessionToken=${token}`
+    `${process.env.BACKEND_URL}/plantilla/query?sessionToken=${token}`
   );
   const plantillas = await resPlantillas.json();
 
   const resClub = await fetch(
-    `http://localhost:8080/club/query?sessionToken=${token}`
+    `${process.env.BACKEND_URL}/club/query?sessionToken=${token}`
   );
   const club = await resClub.json();
 
   const getJugadoresByPlantillaID = async (id: String) => {
     const jugadoresByPlantillaIdRes = await fetch(
-      `http://localhost:8080/plantilla/${id}/jugadores/query?sessionToken=${token}`
+      `${process.env.BACKEND_URL}/plantilla/${id}/jugadores/query?sessionToken=${token}`
     );
     const jugadoresByPlantillaId: Jugadores =
       await jugadoresByPlantillaIdRes.json();
@@ -754,7 +754,7 @@ export const getServerSideProps: GetServerSideProps = async ({
   const plantillasYClubJson = await plantillasYClub();
 
   const resJugadores = await fetch(
-    `http://localhost:8080/jugador/query?sessionToken=${token}`
+    `${process.env.BACKEND_URL}/jugador/query?sessionToken=${token}`
   );
   const jugadores = await resJugadores.json();
 
