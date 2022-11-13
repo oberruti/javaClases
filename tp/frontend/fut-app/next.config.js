@@ -21,8 +21,8 @@ module.exports = {
   env: {
     NEXTAUTH_URL: 'https://java-clases.vercel.app',
     MONGO_URI:
-      'mongodb+srv://octacai:okta1983@database.zkmkf.mongodb.net/Database?retryWrites=true&w=majority',
-    JWT_SECRET: 'INp8IvRIyGMcoVAgFGRA61DdBglwssqwrTzEgz8PSYA',
+      `${MONGO_URI}`,
+    JWT_SECRET: `${JWT_SECRET}`,
   },
   //   webpack: (config, { buildId, dev, isServer, defaultLoaders, webpack }) => {
   //     config.node = {
