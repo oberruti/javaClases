@@ -20,7 +20,7 @@ module.exports = {
   },
   env: {
     NEXTAUTH_URL: 'https://java-clases.vercel.app',
-    MONGO_URI: '',
+    MONGO_URI: process.env.MONGO_URI,
     JWT_SECRET: process.env.JWT_SECRET,
   },
   //   webpack: (config, { buildId, dev, isServer, defaultLoaders, webpack }) => {
