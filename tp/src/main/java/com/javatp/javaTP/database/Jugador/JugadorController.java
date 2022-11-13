@@ -3,7 +3,10 @@ package com.javatp.javaTP.database.Jugador;
 
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Example;
@@ -19,6 +22,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.javatp.javaTP.database.Club.Club;
 import com.javatp.javaTP.database.Club.ClubRepository;
+import com.javatp.javaTP.database.Plantilla.Plantilla;
+import com.javatp.javaTP.database.Plantilla.PlantillaRepository;
 import com.javatp.javaTP.database.Sessions.Sessions;
 import com.javatp.javaTP.database.Sessions.SessionsRepository;
 
@@ -36,6 +41,9 @@ public class JugadorController {
 
     @Autowired
     private ClubRepository clubRepository;
+
+    @Autowired
+    private PlantillaRepository plantillaRepository;
     
     @GetMapping("/query")
     public ArrayList<Jugador> getJugadores(@RequestParam(name = "sessionToken", required = true ) String sessionToken ) {
@@ -67,6 +75,27 @@ public class JugadorController {
         return new Jugador();
     }
 
+    @CrossOrigin("*")
+    @GetMapping(path = "/{id}/{posicion}/query")
+    public Stream<Jugador> jugadorIdealPosicion(@PathVariable("id") String id,@PathVariable("posicion") String posicion, @RequestParam(name = "sessionToken", required = true ) String sessionToken ) {
+        try {
+            Sessions session = sessionsRepository.getSessionBySessionToken(sessionToken).get();
+            Club club = clubRepository.getClubByUserId(session.getUserId()).get();
+            Plantilla plantilla = plantillaRepository.getPlantillaById(id).get();
+            List<Jugador> jugadoresList = this.getJugadores(sessionToken);
+            String[] jugadoresEnPlantillaArray = plantilla.getJugadoresIDs();
+            List<String> jugadoresEnPlantilla = Arrays.asList(jugadoresEnPlantillaArray);
+            Stream<Jugador> jugadoresFiltrados = jugadoresList.stream().filter(jugador -> jugadoresEnPlantilla.contains(jugador.id) == false);
+            Stream<Jugador> jugadoresFiltradosPorPosicion = jugadoresFiltrados.filter(jugador -> jugador.getPosicion().compareTo(posicion) == 0);
+
+            return jugadoresFiltradosPorPosicion;
+        } catch(Exception e) {
+            System.out.println(e);
+        }
+        return null;
+    }
+
+    @CrossOrigin("*")
     @GetMapping(path = "/{id}/query")
     public Optional<Jugador> jugador(@PathVariable("id") String id, @RequestParam(name = "sessionToken", required = true ) String sessionToken ) {
         try {
