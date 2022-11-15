@@ -1,6 +1,7 @@
 import { AppProps } from "next/app";
 import { SessionProvider } from "next-auth/react";
 
+import "react-toastify/dist/ReactToastify.css";
 import "react-widgets/styles.css";
 
 function MyApp({ Component, pageProps, router }: AppProps) {

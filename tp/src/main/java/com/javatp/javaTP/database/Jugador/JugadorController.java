@@ -26,6 +26,7 @@ import com.javatp.javaTP.database.Plantilla.Plantilla;
 import com.javatp.javaTP.database.Plantilla.PlantillaRepository;
 import com.javatp.javaTP.database.Sessions.Sessions;
 import com.javatp.javaTP.database.Sessions.SessionsRepository;
+import com.javatp.javaTP.exception.ApiRequestException;
 
 //@GetMapping
 // public Optional<Jugador> jugador(@RequestParam(name = "id", required = false, defaultValue = "hola" ) String id ) {
@@ -44,78 +45,103 @@ public class JugadorController {
 
     @Autowired
     private PlantillaRepository plantillaRepository;
+
+    private Sessions getSessionByToken(String sessionToken ) {
+        try {
+            Sessions session = sessionsRepository.getSessionBySessionToken(sessionToken).get();
+            return session;
+        } catch(RuntimeException e) {
+            throw new ApiRequestException("Error - Usted no esta autenticado");
+        }
+    }
+
+    private Club getClubBySessionToken(String sessionToken ) {
+        Sessions session = getSessionByToken(sessionToken);
+        try {
+            Club club = clubRepository.getClubByUserId(session.getUserId()).get();
+            return club;
+        } catch(RuntimeException e) {
+            throw new ApiRequestException("Error - No existe club asociado");
+        }
+    }
     
     @GetMapping("/query")
     public ArrayList<Jugador> getJugadores(@RequestParam(name = "sessionToken", required = true ) String sessionToken ) {
+        Club club = getClubBySessionToken(sessionToken);
         try {
-            Sessions session = sessionsRepository.getSessionBySessionToken(sessionToken).get();
-            Club club = clubRepository.getClubByUserId(session.getUserId()).get();
             return (ArrayList<Jugador>) jugadorRepository.findByClubID(club.getId());
-        } catch(Exception e) {
-            System.out.println(e);
-            return new ArrayList<Jugador>();
+        } catch(RuntimeException e) {
+            throw new ApiRequestException("Error - no existen jugadores");
         }
     }
 
     @CrossOrigin("*")
     @PostMapping("/query")
     public Jugador saveJugador(@RequestBody Jugador jugador, @RequestParam(name = "sessionToken", required = true ) String sessionToken ) {
+        if (jugador.clubID.isEmpty() || jugador.edad == null || jugador.liga.isEmpty() || jugador.nacionalidad.isEmpty() || jugador.nombre.isEmpty() || jugador.piernaBuena == null || jugador.posicion == null) {
+            throw new ApiRequestException("Error - campos incorrectos");
+        }
+        Club club = getClubBySessionToken(sessionToken);
         try {
-            Sessions session = sessionsRepository.getSessionBySessionToken(sessionToken).get();
-            Club club = clubRepository.getClubByUserId(session.getUserId()).get();
             String idOne = club.getId();
             String idTwo = jugador.getClubID();
             if (idOne.compareTo(idTwo) == 0) {
-                return jugadorRepository.save(jugador);
+                return (Jugador)jugadorRepository.save(jugador);
             }
-        } catch(Exception e) {
-            System.out.println(e);
-            return new Jugador();
+            throw new ApiRequestException("Error - no se puede guardar un jugador en otro club");
+        } catch(RuntimeException e) {
+            throw new ApiRequestException("Error - no se pudo guardar el jugador");
         }
-        return new Jugador();
+    }
+
+    private Plantilla getPlantillaById(String id) {
+        try {
+            Plantilla plantilla = plantillaRepository.getPlantillaById(id).get();
+            return plantilla;
+        } catch (RuntimeException e) {
+            throw new ApiRequestException("Error - no existe plantilla");
+        }
     }
 
     @CrossOrigin("*")
     @GetMapping(path = "/{id}/{posicion}/query")
     public Stream<Jugador> jugadorIdealPosicion(@PathVariable("id") String id,@PathVariable("posicion") String posicion, @RequestParam(name = "sessionToken", required = true ) String sessionToken ) {
-        try {
-            Sessions session = sessionsRepository.getSessionBySessionToken(sessionToken).get();
-            Club club = clubRepository.getClubByUserId(session.getUserId()).get();
-            Plantilla plantilla = plantillaRepository.getPlantillaById(id).get();
-            List<Jugador> jugadoresList = this.getJugadores(sessionToken);
-            String[] jugadoresEnPlantillaArray = plantilla.getJugadoresIDs();
-            List<String> jugadoresEnPlantilla = Arrays.asList(jugadoresEnPlantillaArray);
-            Stream<Jugador> jugadoresFiltrados = jugadoresList.stream().filter(jugador -> jugadoresEnPlantilla.contains(jugador.id) == false);
-            Stream<Jugador> jugadoresFiltradosPorPosicion = jugadoresFiltrados.filter(jugador -> jugador.getPosicion().compareTo(posicion) == 0);
-
-            return jugadoresFiltradosPorPosicion;
-        } catch(Exception e) {
-            System.out.println(e);
+        if (id.isEmpty() || posicion.isEmpty()) {
+            throw new ApiRequestException("Error - campos incorrectos");
         }
-        return null;
+        getClubBySessionToken(sessionToken);
+        Plantilla plantilla = getPlantillaById(id);
+        List<Jugador> jugadoresList = this.getJugadores(sessionToken);
+        String[] jugadoresEnPlantillaArray = plantilla.getJugadoresIDs();
+        List<String> jugadoresEnPlantilla = Arrays.asList(jugadoresEnPlantillaArray);
+        Stream<Jugador> jugadoresFiltrados = jugadoresList.stream().filter(jugador -> jugadoresEnPlantilla.contains(jugador.id) == false);
+        Stream<Jugador> jugadoresFiltradosPorPosicion = jugadoresFiltrados.filter(jugador -> jugador.getPosicion().compareTo(posicion) == 0);
+
+        return jugadoresFiltradosPorPosicion;
     }
 
     @CrossOrigin("*")
     @GetMapping(path = "/{id}/query")
-    public Optional<Jugador> jugador(@PathVariable("id") String id, @RequestParam(name = "sessionToken", required = true ) String sessionToken ) {
-        try {
-            Sessions session = sessionsRepository.getSessionBySessionToken(sessionToken).get();
-            Club club = clubRepository.getClubByUserId(session.getUserId()).get();
-            return (Optional<Jugador>) jugadorRepository.findByIdAndClubID(id, club.getId());
-        } catch(Exception e) {
-            System.out.println(e);
+    public Optional<Jugador> jugadorByClubId(@PathVariable("id") String id, @RequestParam(name = "sessionToken", required = true ) String sessionToken ) {
+        if (id.isEmpty()) {
+            throw new ApiRequestException("Error - campos incorrectos");
         }
-        return (Optional<Jugador>) jugadorRepository.findByIdAndClubID("1", "1");
+        Club club = getClubBySessionToken(sessionToken);
+        try {
+            return (Optional<Jugador>) jugadorRepository.findByIdAndClubID(id, club.getId());
+        } catch(RuntimeException e) {
+            throw new ApiRequestException("Error - No se pudo encontrar el jugador de ese club");
+        }
     }
 
     @CrossOrigin("*")
     @DeleteMapping(path = "/{id}/query")
     public boolean deleteJugador(@PathVariable("id") String id, @RequestParam(name = "sessionToken", required = true ) String sessionToken ) {
+        if (id.isEmpty()) {
+            throw new ApiRequestException("Error - campos incorrectos");
+        }
+        Club club = getClubBySessionToken(sessionToken);
         try {
-            Sessions session = sessionsRepository.getSessionBySessionToken(sessionToken).get();
-
-            Club club = clubRepository.getClubByUserId(session.getUserId()).get();
-
             Jugador jugador = jugadorRepository.getJugadorById(id).get();
 
             String idOne = club.getId();
@@ -126,7 +152,7 @@ public class JugadorController {
             }
             return false; 
         } catch(Exception err) {
-            return false;
+            throw new ApiRequestException("Error - No se pudo eliminar el jugador");
         }
     }
 

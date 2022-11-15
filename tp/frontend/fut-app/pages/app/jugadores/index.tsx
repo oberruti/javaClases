@@ -22,6 +22,9 @@ import {
 } from "../../../common/components/flex";
 import { StyleMap } from "../../../common/utils/tsTypes";
 import { DropdownList } from "react-widgets";
+import { ERRORES } from "../../../common/components/page/utils";
+import ErrorMessage from "../../../common/components/ErrorMessage";
+import useRenderToast from "../useRenderToast";
 
 const PIERNAS = [
   {
@@ -247,23 +250,20 @@ export interface Jugador {
 export type Jugadores = Jugador[];
 
 type JugadoresPageProps = {
-  jugadores: Jugadores;
-  club: Club;
-  token: string;
+  jugadores?: Jugadores;
+  club?: Club;
+  token?: string;
+  criticalError?: string;
 };
 
-function JugadoresPage({ jugadores, club, token }: JugadoresPageProps) {
+function JugadoresPage({
+  jugadores = [],
+  club,
+  token = "",
+  criticalError,
+}: JugadoresPageProps) {
   const router = useRouter();
-  const jugadoresYClub = jugadores.map((jugador) => ({
-    id: jugador.id,
-    nombre: jugador.nombre,
-    liga: jugador.liga,
-    nacionalidad: jugador.nacionalidad,
-    posicion: jugador.posicion,
-    piernaBuena: jugador.piernaBuena,
-    edad: jugador.edad.toString(),
-    club: club.nombre,
-  }));
+  const renderToast = useRenderToast();
 
   const COLUMNS = useMemo<ColumnDef<JugadorRow>[]>(
     () => [
@@ -314,6 +314,17 @@ function JugadoresPage({ jugadores, club, token }: JugadoresPageProps) {
     ],
     []
   );
+
+  const jugadoresYClub = jugadores.map((jugador) => ({
+    id: jugador.id,
+    nombre: jugador.nombre,
+    liga: jugador.liga,
+    nacionalidad: jugador.nacionalidad,
+    posicion: jugador.posicion,
+    piernaBuena: jugador.piernaBuena,
+    edad: jugador.edad.toString(),
+    club: club?.nombre,
+  }));
 
   const [data, setData] = useState(jugadoresYClub);
   const [isEditing, setIsEditing] = useState(false);
@@ -394,10 +405,12 @@ function JugadoresPage({ jugadores, club, token }: JugadoresPageProps) {
         edad: Number.parseInt(edad),
         nacionalidad,
         liga,
-        posicion: posicion.value,
-        piernaBuena: piernaBuena.value,
+        posicion: posicion?.value,
+        piernaBuena: piernaBuena?.value,
         clubID: club.id,
       };
+
+      renderToast("loading", "Guardando jugador modificado");
       const res = await fetch(
         `${process.env.BACKEND_URL}/jugador/query?sessionToken=${token}`,
         {
@@ -409,11 +422,17 @@ function JugadoresPage({ jugadores, club, token }: JugadoresPageProps) {
         }
       );
       const data = await res.json();
-      if (data) {
-        onCancel();
-        router.reload();
+      if (!res.ok) {
+        renderToast("error", data.message);
       } else {
-        setErrorMessage("No se pudo guardar el jugador.");
+        if (data) {
+          renderToast("success", "Jugador modificado correctamente", () => {
+            onCancel();
+            router.reload();
+          });
+        } else {
+          renderToast("error", "No se pudo guardar el jugador.");
+        }
       }
     } else {
       const jugador = {
@@ -421,10 +440,12 @@ function JugadoresPage({ jugadores, club, token }: JugadoresPageProps) {
         edad: Number.parseInt(edad),
         nacionalidad,
         liga,
-        posicion: posicion.value,
-        piernaBuena: piernaBuena.value,
+        posicion: posicion?.value,
+        piernaBuena: piernaBuena?.value,
         clubID: club.id,
       };
+
+      renderToast("loading", "Guardando jugador nuevo");
       const res = await fetch(
         `${process.env.BACKEND_URL}/jugador/query?sessionToken=${token}`,
         {
@@ -436,18 +457,24 @@ function JugadoresPage({ jugadores, club, token }: JugadoresPageProps) {
         }
       );
       const data = await res.json();
-      if (data) {
-        onCancel();
-        router.reload();
+      if (!res.ok) {
+        renderToast("error", data.message);
       } else {
-        setErrorMessage("No se pudo guardar el jugador.");
+        if (data) {
+          renderToast("success", "Jugador creado correctamente", () => {
+            onCancel();
+            router.reload();
+          });
+        } else {
+          renderToast("error", "No se pudo guardar el jugador.");
+        }
       }
     }
   };
 
   const onDeleteSelection = async () => {
     const id = table.getSelectedRowModel().flatRows[0].original.id;
-    console.log("id", id);
+    renderToast("loading", "Eliminando jugador");
     try {
       const resEliminarJugadores = await fetch(
         `${process.env.BACKEND_URL}/jugador/${id}/query?sessionToken=${token}`,
@@ -456,15 +483,29 @@ function JugadoresPage({ jugadores, club, token }: JugadoresPageProps) {
         }
       );
       const eliminado = await resEliminarJugadores.json();
-      if (eliminado) {
-        router.reload();
+      if (!resEliminarJugadores.ok) {
+        renderToast("error", eliminado.message);
       } else {
-        setErrorMessage("No se pudo eliminar el jugador.");
+        if (eliminado) {
+          renderToast("success", "Jugador eliminado correctamente", () =>
+            router.reload()
+          );
+        } else {
+          renderToast("error", "No se pudo eliminar el jugador.");
+        }
       }
     } catch (e) {
-      setErrorMessage(e.errorMessage);
+      renderToast("error", e.errorMessage);
     }
   };
+
+  if (criticalError) {
+    return (
+      <Layout>
+        <ErrorMessage message={criticalError} />
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
@@ -714,15 +755,42 @@ export const getServerSideProps: GetServerSideProps = async ({
   }
 
   const token = await getToken({ req, raw: true });
-  const resJugadores = await fetch(
-    `${process.env.BACKEND_URL}/jugador/query?sessionToken=${token}`
-  );
-  const jugadores = await resJugadores.json();
 
   const resClub = await fetch(
     `${process.env.BACKEND_URL}/club/query?sessionToken=${token}`
   );
   const club = await resClub.json();
+
+  if (!resClub.ok) {
+    if (
+      club.message === ERRORES.NO_CLUB ||
+      club.message === ERRORES.NO_SESSION
+    ) {
+      return {
+        props: {
+          criticalError: club.message,
+        },
+      };
+    }
+  }
+
+  const resJugadores = await fetch(
+    `${process.env.BACKEND_URL}/jugador/query?sessionToken=${token}`
+  );
+  const jugadores = await resJugadores.json();
+
+  if (!resJugadores.ok) {
+    if (
+      jugadores.message === ERRORES.NO_CLUB ||
+      jugadores.message === ERRORES.NO_SESSION
+    ) {
+      return {
+        props: {
+          criticalError: club.message,
+        },
+      };
+    }
+  }
 
   // If user, stay here
   return { props: { jugadores, club, token } };

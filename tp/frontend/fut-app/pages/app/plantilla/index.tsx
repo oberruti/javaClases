@@ -1,7 +1,7 @@
 import { GetServerSideProps } from "next";
 import { getToken } from "next-auth/jwt";
 import { getSession } from "next-auth/react";
-import { HTMLProps, useEffect, useMemo, useRef, useState } from "react";
+import { HTMLProps, useMemo, useRef, useState } from "react";
 import {
   Column,
   ColumnDef,
@@ -23,6 +23,9 @@ import {
 import { StyleMap } from "../../../common/utils/tsTypes";
 import { Jugadores } from "../jugadores";
 import { DropdownList, Multiselect } from "react-widgets";
+import { ERRORES } from "../../../common/components/page/utils";
+import ErrorMessage from "../../../common/components/ErrorMessage";
+import useRenderToast from "../useRenderToast";
 
 const styles: StyleMap = {
   input: {
@@ -210,21 +213,24 @@ interface Plantilla {
 type Plantillas = Plantilla[];
 
 type PlantillasPageProps = {
-  plantillas: Plantillas;
-  club: Club;
-  token: string;
-  plantillasYClub: PlantillaRow[];
-  listaJugadores: Jugadores;
+  plantillas?: Plantillas;
+  club?: Club;
+  token?: string;
+  plantillasYClub?: PlantillaRow[];
+  listaJugadores?: Jugadores;
+  criticalError?: string;
 };
 
 function PlantillaPage({
-  plantillas,
+  plantillas = [],
   club,
-  token,
-  plantillasYClub,
-  listaJugadores,
+  token = "",
+  plantillasYClub = [],
+  listaJugadores = [],
+  criticalError,
 }: PlantillasPageProps) {
   const router = useRouter();
+  const renderToast = useRenderToast();
 
   const TACTICAS = [
     {
@@ -361,6 +367,7 @@ function PlantillaPage({
     onRowSelectionChange({});
     onCancel();
     setIsAdding(true);
+    setIsEditing(false);
   };
 
   const onCancel = () => {
@@ -379,11 +386,13 @@ function PlantillaPage({
       const plantilla = {
         id,
         nombre,
-        esTitular,
-        tactica: tactica.value,
+        esTitular: !!esTitular,
+        tactica: tactica?.value,
         clubID: club.id,
         jugadoresIDs: jugadores.map((jugador) => jugador.id),
       };
+
+      renderToast("loading", "Guardando plantilla modificada");
       const res = await fetch(
         `${process.env.BACKEND_URL}/plantilla/query?sessionToken=${token}`,
         {
@@ -395,20 +404,29 @@ function PlantillaPage({
         }
       );
       const data = await res.json();
-      if (data) {
-        onCancel();
-        router.reload();
+      if (!res.ok) {
+        console.log("error", data.message);
+        renderToast("error", data.message);
       } else {
-        setErrorMessage("No se pudo guardar la plantilla.");
+        console.log("afuera del error", data);
+        if (data) {
+          renderToast("success", "Plantilla modificada correctamente", () => {
+            onCancel();
+            router.reload();
+          });
+        } else {
+          renderToast("error", "No se pudo guardar la plantilla");
+        }
       }
     } else {
       const plantilla = {
         nombre,
-        esTitular,
-        tactica: tactica.value,
+        esTitular: !!esTitular,
+        tactica: tactica?.value,
         clubID: club.id,
         jugadoresIDs: jugadores.map((jugador) => jugador.id),
       };
+      renderToast("loading", "Guardando plantilla nueva");
       const res = await fetch(
         `${process.env.BACKEND_URL}/plantilla/query?sessionToken=${token}`,
         {
@@ -420,18 +438,24 @@ function PlantillaPage({
         }
       );
       const data = await res.json();
-      if (data) {
-        onCancel();
-        router.reload();
+      if (!res.ok) {
+        renderToast("error", data.message);
       } else {
-        setErrorMessage("No se pudo guardar la plantilla.");
+        if (data) {
+          renderToast("success", "Plantilla creada correctamente", () => {
+            onCancel();
+            router.reload();
+          });
+        } else {
+          renderToast("error", "No se pudo guardar la plantilla");
+        }
       }
     }
   };
 
   const onDeleteSelection = async () => {
     const id = table.getSelectedRowModel().flatRows[0].original.id;
-    console.log("id", id);
+    renderToast("loading", "Eliminando plantilla");
     try {
       const resEliminarPlantilla = await fetch(
         `${process.env.BACKEND_URL}/plantilla/${id}/query?sessionToken=${token}`,
@@ -440,15 +464,29 @@ function PlantillaPage({
         }
       );
       const eliminado = await resEliminarPlantilla.json();
-      if (eliminado) {
-        router.reload();
+      if (!resEliminarPlantilla.ok) {
+        renderToast("error", eliminado.message);
       } else {
-        setErrorMessage("No se pudo eliminar la plantilla.");
+        if (eliminado) {
+          renderToast("success", "Plantilla eliminada correctamente", () =>
+            router.reload()
+          );
+        } else {
+          renderToast("error", "No se pudo eliminar la plantilla.");
+        }
       }
     } catch (e) {
-      setErrorMessage(e.errorMessage);
+      renderToast("error", e.errorMessage);
     }
   };
+
+  if (criticalError) {
+    return (
+      <Layout>
+        <ErrorMessage message={criticalError} />
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
@@ -706,22 +744,57 @@ export const getServerSideProps: GetServerSideProps = async ({
   }
 
   const token = await getToken({ req, raw: true });
-  const resPlantillas = await fetch(
-    `${process.env.BACKEND_URL}/plantilla/query?sessionToken=${token}`
-  );
-  const plantillas = await resPlantillas.json();
 
   const resClub = await fetch(
     `${process.env.BACKEND_URL}/club/query?sessionToken=${token}`
   );
   const club = await resClub.json();
 
+  if (!resClub.ok) {
+    if (
+      club.message === ERRORES.NO_CLUB ||
+      club.message === ERRORES.NO_SESSION
+    ) {
+      return {
+        props: {
+          criticalError: club.message,
+        },
+      };
+    }
+  }
+
+  const resPlantillas = await fetch(
+    `${process.env.BACKEND_URL}/plantilla/query?sessionToken=${token}`
+  );
+  const plantillas = await resPlantillas.json();
+
+  if (!resPlantillas.ok) {
+    if (
+      plantillas.message === ERRORES.NO_CLUB ||
+      plantillas.message === ERRORES.NO_SESSION
+    ) {
+      return {
+        props: {
+          criticalError: plantillas.message,
+        },
+      };
+    }
+  }
+
   const getJugadoresByPlantillaID = async (id: String) => {
     const jugadoresByPlantillaIdRes = await fetch(
       `${process.env.BACKEND_URL}/plantilla/${id}/jugadores/query?sessionToken=${token}`
     );
-    const jugadoresByPlantillaId: Jugadores =
-      await jugadoresByPlantillaIdRes.json();
+    const jugadoresByPlantillaId = await jugadoresByPlantillaIdRes.json();
+
+    if (!jugadoresByPlantillaIdRes.ok) {
+      {
+        return {
+          criticalError: jugadoresByPlantillaId.message,
+        };
+      }
+    }
+
     if (jugadoresByPlantillaId) {
       return jugadoresByPlantillaId;
     }
@@ -730,6 +803,9 @@ export const getServerSideProps: GetServerSideProps = async ({
 
   const getPlantillaByPlantilla = async (plantilla) => {
     const jugadores = await getJugadoresByPlantillaID(plantilla.id);
+    if (jugadores.criticalError) {
+      return jugadores;
+    }
     return {
       id: plantilla.id,
       nombre: plantilla.nombre,
@@ -745,6 +821,9 @@ export const getServerSideProps: GetServerSideProps = async ({
 
     for (var i = 0; i < plantillas.length; i++) {
       const plant = await getPlantillaByPlantilla(plantillas[i]);
+      if (plant.criticalError) {
+        return plant;
+      }
       plantillasDone.push(plant);
     }
 
@@ -753,10 +832,31 @@ export const getServerSideProps: GetServerSideProps = async ({
 
   const plantillasYClubJson = await plantillasYClub();
 
+  if (plantillasYClubJson.criticalError) {
+    return {
+      props: {
+        criticalError: plantillasYClubJson.criticalError,
+      },
+    };
+  }
+
   const resJugadores = await fetch(
     `${process.env.BACKEND_URL}/jugador/query?sessionToken=${token}`
   );
   const jugadores = await resJugadores.json();
+
+  if (!resJugadores.ok) {
+    if (
+      jugadores.message === ERRORES.NO_CLUB ||
+      jugadores.message === ERRORES.NO_SESSION
+    ) {
+      return {
+        props: {
+          criticalError: jugadores.message,
+        },
+      };
+    }
+  }
 
   // If user, stay here
   return {

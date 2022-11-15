@@ -7,6 +7,7 @@ import { JustChildren } from "../../utils/tsTypes";
 import { COLORS } from "../../../styles/style";
 import { signOut } from "next-auth/react";
 import { v4 } from "uuid";
+import { ToastContainer } from "react-toastify";
 
 export function Menu(props: { name: string; id: string }): JSX.Element {
   const dimensions: CSSProperties = {
@@ -116,7 +117,21 @@ export const Layout = (props: JustChildren): JSX.Element => {
   return (
     <HorizontalStack style={style}>
       <Navigation />
-      <AppContent>{props.children}</AppContent>
+      <AppContent>
+        <ToastContainer
+          position="bottom-center"
+          autoClose={5000}
+          hideProgressBar={false}
+          newestOnTop
+          closeOnClick
+          rtl={false}
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
+          theme="dark"
+        />
+        {props.children}
+      </AppContent>
     </HorizontalStack>
   );
 };
