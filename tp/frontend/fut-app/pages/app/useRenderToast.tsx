@@ -1,7 +1,7 @@
 import React from "react";
 import { toast } from "react-toastify";
 
-export const useRenderToast = () => {
+const useRenderToast = () => {
   const renderToast = (type: string, message: string, onClose?: () => void) => {
     if (type === "success") {
       toast.success(message, {
@@ -45,3 +45,5 @@ export const useRenderToast = () => {
   };
   return renderToast;
 };
+
+export default useRenderToast;

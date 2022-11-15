@@ -25,7 +25,7 @@ import { Jugadores } from "../jugadores";
 import { DropdownList, Multiselect } from "react-widgets";
 import { ERRORES } from "../../../common/components/page/utils";
 import ErrorMessage from "../../../common/components/ErrorMessage";
-import { useRenderToast } from "../useRenderToast";
+import useRenderToast from "../useRenderToast";
 
 const styles: StyleMap = {
   input: {

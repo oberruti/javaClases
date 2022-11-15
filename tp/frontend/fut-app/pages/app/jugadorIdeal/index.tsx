@@ -20,7 +20,7 @@ import { Jugador, Jugadores, JugadorRow, POSICIONES } from "../jugadores";
 import { DropdownList } from "react-widgets";
 import ErrorMessage from "../../../common/components/ErrorMessage";
 import { ERRORES } from "../../../common/components/page/utils";
-import { useRenderToast } from "../useRenderToast";
+import useRenderToast from "../useRenderToast";
 
 const styles: StyleMap = {
   input: {

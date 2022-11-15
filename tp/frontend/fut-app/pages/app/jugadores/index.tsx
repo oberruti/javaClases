@@ -24,7 +24,7 @@ import { StyleMap } from "../../../common/utils/tsTypes";
 import { DropdownList } from "react-widgets";
 import { ERRORES } from "../../../common/components/page/utils";
 import ErrorMessage from "../../../common/components/ErrorMessage";
-import { useRenderToast } from "../useRenderToast";
+import useRenderToast from "../useRenderToast";
 
 const PIERNAS = [
   {
