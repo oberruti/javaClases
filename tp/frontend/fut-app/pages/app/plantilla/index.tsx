@@ -25,6 +25,7 @@ import { Jugadores } from "../jugadores";
 import { DropdownList, Multiselect } from "react-widgets";
 import { ERRORES } from "../../../common/components/page/utils";
 import ErrorMessage from "../../../common/components/ErrorMessage";
+import { useRenderToast } from "../useRenderToast";
 
 const styles: StyleMap = {
   input: {
@@ -229,6 +230,7 @@ function PlantillaPage({
   criticalError,
 }: PlantillasPageProps) {
   const router = useRouter();
+  const renderToast = useRenderToast();
 
   const TACTICAS = [
     {
@@ -365,6 +367,7 @@ function PlantillaPage({
     onRowSelectionChange({});
     onCancel();
     setIsAdding(true);
+    setIsEditing(false);
   };
 
   const onCancel = () => {
@@ -383,11 +386,13 @@ function PlantillaPage({
       const plantilla = {
         id,
         nombre,
-        esTitular,
-        tactica: tactica.value,
+        esTitular: !!esTitular,
+        tactica: tactica?.value,
         clubID: club.id,
         jugadoresIDs: jugadores.map((jugador) => jugador.id),
       };
+
+      renderToast("loading", "Guardando plantilla modificada");
       const res = await fetch(
         `${process.env.BACKEND_URL}/plantilla/query?sessionToken=${token}`,
         {
@@ -399,20 +404,29 @@ function PlantillaPage({
         }
       );
       const data = await res.json();
-      if (data) {
-        onCancel();
-        router.reload();
+      if (!res.ok) {
+        console.log("error", data.message);
+        renderToast("error", data.message);
       } else {
-        setErrorMessage("No se pudo guardar la plantilla.");
+        console.log("afuera del error", data);
+        if (data) {
+          renderToast("success", "Plantilla modificada correctamente", () => {
+            onCancel();
+            router.reload();
+          });
+        } else {
+          renderToast("error", "No se pudo guardar la plantilla");
+        }
       }
     } else {
       const plantilla = {
         nombre,
-        esTitular,
-        tactica: tactica.value,
+        esTitular: !!esTitular,
+        tactica: tactica?.value,
         clubID: club.id,
         jugadoresIDs: jugadores.map((jugador) => jugador.id),
       };
+      renderToast("loading", "Guardando plantilla nueva");
       const res = await fetch(
         `${process.env.BACKEND_URL}/plantilla/query?sessionToken=${token}`,
         {
@@ -424,18 +438,24 @@ function PlantillaPage({
         }
       );
       const data = await res.json();
-      if (data) {
-        onCancel();
-        router.reload();
+      if (!res.ok) {
+        renderToast("error", data.message);
       } else {
-        setErrorMessage("No se pudo guardar la plantilla.");
+        if (data) {
+          renderToast("success", "Plantilla creada correctamente", () => {
+            onCancel();
+            router.reload();
+          });
+        } else {
+          renderToast("error", "No se pudo guardar la plantilla");
+        }
       }
     }
   };
 
   const onDeleteSelection = async () => {
     const id = table.getSelectedRowModel().flatRows[0].original.id;
-    console.log("id", id);
+    renderToast("loading", "Eliminando plantilla");
     try {
       const resEliminarPlantilla = await fetch(
         `${process.env.BACKEND_URL}/plantilla/${id}/query?sessionToken=${token}`,
@@ -444,13 +464,19 @@ function PlantillaPage({
         }
       );
       const eliminado = await resEliminarPlantilla.json();
-      if (eliminado) {
-        router.reload();
+      if (!resEliminarPlantilla.ok) {
+        renderToast("error", eliminado.message);
       } else {
-        setErrorMessage("No se pudo eliminar la plantilla.");
+        if (eliminado) {
+          renderToast("success", "Plantilla eliminada correctamente", () =>
+            router.reload()
+          );
+        } else {
+          renderToast("error", "No se pudo eliminar la plantilla.");
+        }
       }
     } catch (e) {
-      setErrorMessage(e.errorMessage);
+      renderToast("error", e.errorMessage);
     }
   };
 

@@ -16,10 +16,11 @@ import {
   VerticalStack,
 } from "../../../common/components/flex";
 import { StyleMap } from "../../../common/utils/tsTypes";
-import { Jugadores, JugadorRow, POSICIONES } from "../jugadores";
+import { Jugador, Jugadores, JugadorRow, POSICIONES } from "../jugadores";
 import { DropdownList } from "react-widgets";
 import ErrorMessage from "../../../common/components/ErrorMessage";
 import { ERRORES } from "../../../common/components/page/utils";
+import { useRenderToast } from "../useRenderToast";
 
 const styles: StyleMap = {
   input: {
@@ -166,6 +167,7 @@ function jugadorIdealPage({
     []
   );
 
+  const renderToast = useRenderToast();
   const [errorMessage, setErrorMessage] = useState<string | undefined>();
   const [plantillaSelected, setPlantillaSelected] = useState<PlantillaRow>();
   const [posicionSelected, setPosicionSelected] = useState<{
@@ -173,26 +175,85 @@ function jugadorIdealPage({
     value: string;
   }>();
 
+  const getNacionalidades = (plantillaSelected: PlantillaRow) => {
+    const nacionalidadesDeJugadoresDeLaPlantilla =
+      plantillaSelected.jugadores.map((jugador) => jugador.nacionalidad);
+    var nacionalidades = [];
+    nacionalidadesDeJugadoresDeLaPlantilla.forEach((nacionalidad) => {
+      if (
+        nacionalidades.some(
+          (nacionalidadCount, index) =>
+            nacionalidad === nacionalidadCount.nacionalidad
+        )
+      ) {
+        nacionalidades = nacionalidades.map((nacionalidadInterno) => {
+          if (nacionalidadInterno.nacionalidad === nacionalidad) {
+            return {
+              nacionalidad,
+              cuenta: nacionalidadInterno.cuenta + 1,
+            };
+          }
+          return nacionalidadInterno;
+        });
+      } else {
+        nacionalidades.push({
+          nacionalidad,
+          cuenta: 1,
+        });
+      }
+    });
+    console.log("las nacionaldiades son ", nacionalidades);
+    return nacionalidades;
+  };
+
+  const getJugadorIdealByNacionalidadesYJugadores = (
+    jugadores: Jugadores,
+    nacionalidades: { nacionalidad: string; cuenta: number }[]
+  ) => {
+    const nacionalidadesDeJugadores = jugadores.map(
+      (jugador) => jugador.nacionalidad
+    );
+    const nacionSeleccionada = nacionalidades.find((nacionalidad) => {
+      if (nacionalidadesDeJugadores.includes(nacionalidad.nacionalidad)) {
+        return nacionalidad;
+      }
+    });
+    if (nacionSeleccionada) {
+      return jugadores.find(
+        (jugador) => jugador.nacionalidad === nacionSeleccionada.nacionalidad
+      );
+    }
+    return jugadores[0];
+  };
+
   const getJugadorIdeal = async () => {
     if (posicionSelected) {
       const jugadoresRes = await fetch(
         `${process.env.BACKEND_URL}/jugador/${plantillaSelected.id}/${posicionSelected.value}/query?sessionToken=${token}`
       );
       const jugadores = await jugadoresRes.json();
-      if (jugadores.length > 0) {
-        const jugador = jugadores[0];
-        return {
-          id: jugador.id,
-          nombre: jugador.nombre,
-          liga: jugador.liga,
-          nacionalidad: jugador.nacionalidad,
-          posicion: jugador.posicion,
-          piernaBuena: jugador.piernaBuena,
-          edad: jugador.edad.toString(),
-          club: plantillaSelected.club,
-        };
+      if (!jugadoresRes.ok) {
+        renderToast("error", jugadores.message);
+      } else {
+        if (jugadores.length > 0) {
+          const nacionalidades = getNacionalidades(plantillaSelected);
+          const jugadorIdeal = getJugadorIdealByNacionalidadesYJugadores(
+            jugadores,
+            nacionalidades
+          );
+          return {
+            id: jugadorIdeal.id,
+            nombre: jugadorIdeal.nombre,
+            liga: jugadorIdeal.liga,
+            nacionalidad: jugadorIdeal.nacionalidad,
+            posicion: jugadorIdeal.posicion,
+            piernaBuena: jugadorIdeal.piernaBuena,
+            edad: jugadorIdeal.edad.toString(),
+            club: plantillaSelected.club,
+          };
+        }
+        return [];
       }
-      return [];
     } else {
       console.log("error");
     }

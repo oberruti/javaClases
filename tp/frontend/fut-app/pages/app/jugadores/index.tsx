@@ -24,6 +24,7 @@ import { StyleMap } from "../../../common/utils/tsTypes";
 import { DropdownList } from "react-widgets";
 import { ERRORES } from "../../../common/components/page/utils";
 import ErrorMessage from "../../../common/components/ErrorMessage";
+import { useRenderToast } from "../useRenderToast";
 
 const PIERNAS = [
   {
@@ -262,6 +263,7 @@ function JugadoresPage({
   criticalError,
 }: JugadoresPageProps) {
   const router = useRouter();
+  const renderToast = useRenderToast();
 
   const COLUMNS = useMemo<ColumnDef<JugadorRow>[]>(
     () => [
@@ -403,10 +405,12 @@ function JugadoresPage({
         edad: Number.parseInt(edad),
         nacionalidad,
         liga,
-        posicion: posicion.value,
-        piernaBuena: piernaBuena.value,
+        posicion: posicion?.value,
+        piernaBuena: piernaBuena?.value,
         clubID: club.id,
       };
+
+      renderToast("loading", "Guardando jugador modificado");
       const res = await fetch(
         `${process.env.BACKEND_URL}/jugador/query?sessionToken=${token}`,
         {
@@ -418,11 +422,17 @@ function JugadoresPage({
         }
       );
       const data = await res.json();
-      if (data) {
-        onCancel();
-        router.reload();
+      if (!res.ok) {
+        renderToast("error", data.message);
       } else {
-        setErrorMessage("No se pudo guardar el jugador.");
+        if (data) {
+          renderToast("success", "Jugador modificado correctamente", () => {
+            onCancel();
+            router.reload();
+          });
+        } else {
+          renderToast("error", "No se pudo guardar el jugador.");
+        }
       }
     } else {
       const jugador = {
@@ -430,10 +440,12 @@ function JugadoresPage({
         edad: Number.parseInt(edad),
         nacionalidad,
         liga,
-        posicion: posicion.value,
-        piernaBuena: piernaBuena.value,
+        posicion: posicion?.value,
+        piernaBuena: piernaBuena?.value,
         clubID: club.id,
       };
+
+      renderToast("loading", "Guardando jugador nuevo");
       const res = await fetch(
         `${process.env.BACKEND_URL}/jugador/query?sessionToken=${token}`,
         {
@@ -445,18 +457,24 @@ function JugadoresPage({
         }
       );
       const data = await res.json();
-      if (data) {
-        onCancel();
-        router.reload();
+      if (!res.ok) {
+        renderToast("error", data.message);
       } else {
-        setErrorMessage("No se pudo guardar el jugador.");
+        if (data) {
+          renderToast("success", "Jugador creado correctamente", () => {
+            onCancel();
+            router.reload();
+          });
+        } else {
+          renderToast("error", "No se pudo guardar el jugador.");
+        }
       }
     }
   };
 
   const onDeleteSelection = async () => {
     const id = table.getSelectedRowModel().flatRows[0].original.id;
-    console.log("id", id);
+    renderToast("loading", "Eliminando jugador");
     try {
       const resEliminarJugadores = await fetch(
         `${process.env.BACKEND_URL}/jugador/${id}/query?sessionToken=${token}`,
@@ -465,13 +483,19 @@ function JugadoresPage({
         }
       );
       const eliminado = await resEliminarJugadores.json();
-      if (eliminado) {
-        router.reload();
+      if (!resEliminarJugadores.ok) {
+        renderToast("error", eliminado.message);
       } else {
-        setErrorMessage("No se pudo eliminar el jugador.");
+        if (eliminado) {
+          renderToast("success", "Jugador eliminado correctamente", () =>
+            router.reload()
+          );
+        } else {
+          renderToast("error", "No se pudo eliminar el jugador.");
+        }
       }
     } catch (e) {
-      setErrorMessage(e.errorMessage);
+      renderToast("error", e.errorMessage);
     }
   };
 
