@@ -22,6 +22,8 @@ import {
 } from "../../../common/components/flex";
 import { StyleMap } from "../../../common/utils/tsTypes";
 import { DropdownList } from "react-widgets";
+import { ERRORES } from "../../../common/components/page/utils";
+import ErrorMessage from "../../../common/components/ErrorMessage";
 
 const PIERNAS = [
   {
@@ -247,23 +249,19 @@ export interface Jugador {
 export type Jugadores = Jugador[];
 
 type JugadoresPageProps = {
-  jugadores: Jugadores;
-  club: Club;
-  token: string;
+  jugadores?: Jugadores;
+  club?: Club;
+  token?: string;
+  criticalError?: string;
 };
 
-function JugadoresPage({ jugadores, club, token }: JugadoresPageProps) {
+function JugadoresPage({
+  jugadores = [],
+  club,
+  token = "",
+  criticalError,
+}: JugadoresPageProps) {
   const router = useRouter();
-  const jugadoresYClub = jugadores.map((jugador) => ({
-    id: jugador.id,
-    nombre: jugador.nombre,
-    liga: jugador.liga,
-    nacionalidad: jugador.nacionalidad,
-    posicion: jugador.posicion,
-    piernaBuena: jugador.piernaBuena,
-    edad: jugador.edad.toString(),
-    club: club.nombre,
-  }));
 
   const COLUMNS = useMemo<ColumnDef<JugadorRow>[]>(
     () => [
@@ -314,6 +312,17 @@ function JugadoresPage({ jugadores, club, token }: JugadoresPageProps) {
     ],
     []
   );
+
+  const jugadoresYClub = jugadores.map((jugador) => ({
+    id: jugador.id,
+    nombre: jugador.nombre,
+    liga: jugador.liga,
+    nacionalidad: jugador.nacionalidad,
+    posicion: jugador.posicion,
+    piernaBuena: jugador.piernaBuena,
+    edad: jugador.edad.toString(),
+    club: club?.nombre,
+  }));
 
   const [data, setData] = useState(jugadoresYClub);
   const [isEditing, setIsEditing] = useState(false);
@@ -465,6 +474,14 @@ function JugadoresPage({ jugadores, club, token }: JugadoresPageProps) {
       setErrorMessage(e.errorMessage);
     }
   };
+
+  if (criticalError) {
+    return (
+      <Layout>
+        <ErrorMessage message={criticalError} />
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
@@ -714,15 +731,42 @@ export const getServerSideProps: GetServerSideProps = async ({
   }
 
   const token = await getToken({ req, raw: true });
-  const resJugadores = await fetch(
-    `${process.env.BACKEND_URL}/jugador/query?sessionToken=${token}`
-  );
-  const jugadores = await resJugadores.json();
 
   const resClub = await fetch(
     `${process.env.BACKEND_URL}/club/query?sessionToken=${token}`
   );
   const club = await resClub.json();
+
+  if (!resClub.ok) {
+    if (
+      club.message === ERRORES.NO_CLUB ||
+      club.message === ERRORES.NO_SESSION
+    ) {
+      return {
+        props: {
+          criticalError: club.message,
+        },
+      };
+    }
+  }
+
+  const resJugadores = await fetch(
+    `${process.env.BACKEND_URL}/jugador/query?sessionToken=${token}`
+  );
+  const jugadores = await resJugadores.json();
+
+  if (!resJugadores.ok) {
+    if (
+      jugadores.message === ERRORES.NO_CLUB ||
+      jugadores.message === ERRORES.NO_SESSION
+    ) {
+      return {
+        props: {
+          criticalError: club.message,
+        },
+      };
+    }
+  }
 
   // If user, stay here
   return { props: { jugadores, club, token } };

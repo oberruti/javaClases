@@ -18,6 +18,8 @@ import {
 import { StyleMap } from "../../../common/utils/tsTypes";
 import { Jugadores, JugadorRow, POSICIONES } from "../jugadores";
 import { DropdownList } from "react-widgets";
+import ErrorMessage from "../../../common/components/ErrorMessage";
+import { ERRORES } from "../../../common/components/page/utils";
 
 const styles: StyleMap = {
   input: {
@@ -120,13 +122,15 @@ type PlantillaRow = {
 };
 
 type ListadoJugadoresPorPlantillaPageProps = {
-  token: string;
-  plantillasYClub: PlantillaRow[];
+  token?: string;
+  plantillasYClub?: PlantillaRow[];
+  criticalError?: string;
 };
 
 function jugadorIdealPage({
-  token,
-  plantillasYClub,
+  token = "",
+  plantillasYClub = [],
+  criticalError,
 }: ListadoJugadoresPorPlantillaPageProps) {
   const COLUMNS = useMemo<ColumnDef<JugadorRow>[]>(
     () => [
@@ -222,7 +226,6 @@ function jugadorIdealPage({
   });
 
   useEffect(() => {
-    console.log("entra aca");
     const getData = async () => {
       const jugadores = await getJugadorIdeal();
       if (Array.isArray(jugadores) && jugadores.length === 0) {
@@ -238,6 +241,14 @@ function jugadorIdealPage({
       setData([]);
     }
   }, [posicionSelected]);
+
+  if (criticalError) {
+    return (
+      <Layout>
+        <ErrorMessage message={criticalError} />
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
@@ -390,22 +401,58 @@ export const getServerSideProps: GetServerSideProps = async ({
   }
 
   const token = await getToken({ req, raw: true });
-  const resPlantillas = await fetch(
-    `${process.env.BACKEND_URL}/plantilla/query?sessionToken=${token}`
-  );
-  const plantillas = await resPlantillas.json();
 
   const resClub = await fetch(
     `${process.env.BACKEND_URL}/club/query?sessionToken=${token}`
   );
   const club = await resClub.json();
 
+  if (!resClub.ok) {
+    if (
+      club.message === ERRORES.NO_CLUB ||
+      club.message === ERRORES.NO_SESSION
+    ) {
+      return {
+        props: {
+          criticalError: club.message,
+        },
+      };
+    }
+  }
+
+  const resPlantillas = await fetch(
+    `${process.env.BACKEND_URL}/plantilla/query?sessionToken=${token}`
+  );
+  const plantillas = await resPlantillas.json();
+
+  if (!resPlantillas.ok) {
+    if (
+      plantillas.message === ERRORES.NO_CLUB ||
+      plantillas.message === ERRORES.NO_SESSION
+    ) {
+      return {
+        props: {
+          criticalError: plantillas.message,
+        },
+      };
+    }
+  }
+
   const getJugadoresByPlantillaID = async (id: String) => {
     const jugadoresByPlantillaIdRes = await fetch(
       `${process.env.BACKEND_URL}/plantilla/${id}/jugadores/query?sessionToken=${token}`
     );
-    const jugadoresByPlantillaId: Jugadores =
-      await jugadoresByPlantillaIdRes.json();
+
+    const jugadoresByPlantillaId = await jugadoresByPlantillaIdRes.json();
+
+    if (!jugadoresByPlantillaIdRes.ok) {
+      {
+        return {
+          criticalError: jugadoresByPlantillaId.message,
+        };
+      }
+    }
+
     if (jugadoresByPlantillaId) {
       return jugadoresByPlantillaId;
     }
@@ -414,6 +461,9 @@ export const getServerSideProps: GetServerSideProps = async ({
 
   const getPlantillaByPlantilla = async (plantilla) => {
     const jugadores = await getJugadoresByPlantillaID(plantilla.id);
+    if (jugadores.criticalError) {
+      return jugadores;
+    }
     return {
       id: plantilla.id,
       nombre: plantilla.nombre,
@@ -429,6 +479,9 @@ export const getServerSideProps: GetServerSideProps = async ({
 
     for (var i = 0; i < plantillas.length; i++) {
       const plant = await getPlantillaByPlantilla(plantillas[i]);
+      if (plant.criticalError) {
+        return plant;
+      }
       plantillasDone.push(plant);
     }
 
@@ -436,6 +489,14 @@ export const getServerSideProps: GetServerSideProps = async ({
   };
 
   const plantillasYClubJson = await plantillasYClub();
+
+  if (plantillasYClubJson.criticalError) {
+    return {
+      props: {
+        criticalError: plantillasYClubJson.criticalError,
+      },
+    };
+  }
 
   // If user, stay here
   return {
