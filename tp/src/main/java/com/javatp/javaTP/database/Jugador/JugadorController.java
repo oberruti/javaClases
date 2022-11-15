@@ -78,7 +78,7 @@ public class JugadorController {
     @CrossOrigin("*")
     @PostMapping("/query")
     public Jugador saveJugador(@RequestBody Jugador jugador, @RequestParam(name = "sessionToken", required = true ) String sessionToken ) {
-        if (jugador.clubID.isEmpty() || jugador.edad == null || jugador.liga.isEmpty() || jugador.nacionalidad.isEmpty() || jugador.nombre.isEmpty() || jugador.piernaBuena.isEmpty() || jugador.posicion.isEmpty()) {
+        if (jugador.clubID.isEmpty() || jugador.edad == null || jugador.liga.isEmpty() || jugador.nacionalidad.isEmpty() || jugador.nombre.isEmpty() || jugador.piernaBuena == null || jugador.posicion == null) {
             throw new ApiRequestException("Error - campos incorrectos");
         }
         Club club = getClubBySessionToken(sessionToken);

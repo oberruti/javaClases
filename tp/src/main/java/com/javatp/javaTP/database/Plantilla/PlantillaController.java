@@ -75,7 +75,7 @@ public class PlantillaController {
     @CrossOrigin("*")
     @PostMapping("/query")
     public Plantilla savePlantilla(@RequestBody Plantilla plantilla, @RequestParam(name = "sessionToken", required = true ) String sessionToken ) {
-        if (plantilla.getEsTitular() == null || plantilla.getClubID().isEmpty() || plantilla.getNombre().isEmpty() || plantilla.getTactica().isEmpty())
+        if (plantilla.getEsTitular() == null || plantilla.getClubID().isEmpty() || plantilla.getNombre().isEmpty() || plantilla.getTactica() == null)
         {
             throw new ApiRequestException("Error - Parametros incorrectos");
         }
@@ -86,7 +86,7 @@ public class PlantillaController {
             String idOne = club.getId();
             String idTwo = plantilla.getClubID();
             if (idOne.compareTo(idTwo) == 0) {
-                return plantillaRepository.save(plantilla);
+                return (Plantilla) plantillaRepository.save(plantilla);
             }
             throw new ApiRequestException("Error - No se pudo guardar la plantilla");
         } catch(RuntimeException e) {
