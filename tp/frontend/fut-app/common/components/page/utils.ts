@@ -7,3 +7,9 @@ export const PAGES = {
   JUGADOR_IDEAL: 'jugadorIdeal',
   DTS: 'dts',
 };
+
+
+export const ERRORES = {
+  NO_CLUB: 'Error - No existe club asociado',
+  NO_SESSION: 'Error - Usted no esta autenticado',
+}
