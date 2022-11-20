@@ -53,7 +53,6 @@ public class ClubController {
         if (club.getNacionalidad().isEmpty() || club.getNombre().isEmpty() || club.getSigla().isEmpty() || club.getUserID().isEmpty()) {
             throw new ApiRequestException("Error - Parametros incorrectos");
         }
-        System.out.println("Despues del primer IF "+club.getId());
         if (club.getId() != null) {
             try {
                 return clubRepository.save(club);
