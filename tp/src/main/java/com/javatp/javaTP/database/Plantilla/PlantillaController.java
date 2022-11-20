@@ -84,7 +84,8 @@ public class PlantillaController {
     @CrossOrigin("*")
     @PostMapping("/query")
     public Plantilla savePlantilla(@RequestBody Plantilla plantilla, @RequestParam(name = "sessionToken", required = true ) String sessionToken ) {
-        if (plantilla.getEsTitular() == null || plantilla.getClubID().isEmpty() || plantilla.getNombre().isEmpty() || plantilla.getTactica() == null)
+        System.out.println(plantilla.toString());
+        if (plantilla.getEsTitular() == null || plantilla.getClubID().isEmpty() || plantilla.getNombre().isEmpty() || plantilla.getTactica() == null || plantilla.getDtId() == null)
         {
             throw new ApiRequestException("Error - Parametros incorrectos");
         }
@@ -164,7 +165,7 @@ public class PlantillaController {
                     throw new ApiRequestException("Error - No se encontro dt");
                 }
              }
-             return null;
+             throw new ApiRequestException("Error - No se encontro dt para esta plantilla");
     }
 
     private Plantilla getPlantillaById(String id) {
