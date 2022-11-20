@@ -9,7 +9,6 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Example;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -23,6 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.javatp.javaTP.database.Club.Club;
 import com.javatp.javaTP.database.Club.ClubRepository;
 import com.javatp.javaTP.database.Plantilla.Plantilla;
+import com.javatp.javaTP.database.Plantilla.PlantillaController;
 import com.javatp.javaTP.database.Plantilla.PlantillaRepository;
 import com.javatp.javaTP.database.Sessions.Sessions;
 import com.javatp.javaTP.database.Sessions.SessionsRepository;
@@ -45,6 +45,9 @@ public class JugadorController {
 
     @Autowired
     private PlantillaRepository plantillaRepository;
+
+    @Autowired
+    private PlantillaController plantillaController;
 
     private Sessions getSessionByToken(String sessionToken ) {
         try {
@@ -143,6 +146,7 @@ public class JugadorController {
         Club club = getClubBySessionToken(sessionToken);
         try {
             Jugador jugador = jugadorRepository.getJugadorById(id).get();
+            plantillaController.deleteJugadorFromPlantillas(id, sessionToken);
 
             String idOne = club.getId();
             String idTwo = jugador.getClubID();

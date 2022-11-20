@@ -1,9 +1,9 @@
-package com.javatp.javaTP.database.DT;
+package com.javatp.javaTP.database.Dt;
 
 import org.springframework.data.annotation.Id;
 
 
-public class DT {
+public class Dt {
 
   @Id
   private String id;
@@ -12,18 +12,15 @@ public class DT {
   private String liga;
   private String nacionalidad;
 
-
   private String clubID;
-  private String[] plantillaIDs;
 
-  public DT() {}
+  public Dt() {}
 
-  public DT(String nombre, String liga, String nacionalidad, String clubID, String[] plantillaIDs) {
+  public Dt(String nombre, String liga, String nacionalidad, String clubID) {
     this.nombre = nombre;
     this.liga = liga;
     this.nacionalidad = nacionalidad;
     this.clubID = clubID;
-    this.plantillaIDs = plantillaIDs;
   }
 
   public String getId() {
@@ -46,10 +43,6 @@ public class DT {
     return this.clubID;
   }
 
-  public String[] getPlantillaIDs() {
-    return this.plantillaIDs;
-  }
-
   public void setId(String id) {
     this.id = id;
   }
@@ -70,15 +63,11 @@ public class DT {
     this.clubID = clubID;
   }
 
-  public void setPlantillaIDs(String[] plantillaIDs) {
-    this.plantillaIDs = plantillaIDs;
-  }
-
   @Override
   public String toString() {
     return String.format(
-        "Club[id=%s, nombre='%s', liga='%s', nacionalidad='%s', clubID='%s', plantillaIDs='%s']",
-        id, nombre, liga, nacionalidad, clubID, plantillaIDs);
+        "Club[id=%s, nombre='%s', liga='%s', nacionalidad='%s', clubID='%s']",
+        id, nombre, liga, nacionalidad, clubID);
   }
 
 }

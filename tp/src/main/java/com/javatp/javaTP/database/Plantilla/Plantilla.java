@@ -12,17 +12,20 @@ public class Plantilla {
   private String tactica;
   private Boolean esTitular;
   private String[] jugadoresIDs;
+  
+  private String dtID;
 
   private String clubID;
 
   public Plantilla() {}
 
-  public Plantilla(String nombre, String tactica, Boolean esTitular, String[] jugadoresIds, String clubID) {
+  public Plantilla(String nombre, String tactica, Boolean esTitular, String[] jugadoresIds, String clubID, String dtID) {
     this.nombre = nombre;
     this.tactica = tactica;
     this.esTitular = esTitular;
     this.jugadoresIDs = jugadoresIds;
     this.clubID = clubID;
+    this.dtID = dtID;
   }
 
   public String getId() {
@@ -73,11 +76,19 @@ public class Plantilla {
     this.jugadoresIDs = jugadoresIDs;
   }
 
+  public String getDtId() {
+    return this.dtID;
+  }
+
+  public void setDtId(String dtId) {
+    this.dtID = dtId;
+  }
+
   @Override
   public String toString() {
     return String.format(
-        "Club[id=%s, nombre='%s', tactica='%s', esTitular='%s', clubID='%s']",
-        id, nombre, tactica, esTitular, clubID);
+        "Club[id=%s, nombre='%s', tactica='%s', esTitular='%s', clubID='%s', jugadoresID='%s', dtId='%s']",
+        id, nombre, tactica, esTitular, clubID, jugadoresIDs.toString(), dtID);
   }
 
 }

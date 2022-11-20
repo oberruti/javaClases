@@ -3,10 +3,12 @@ package com.javatp.javaTP.database.Plantilla;
 
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.*;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Example;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -19,6 +21,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.javatp.javaTP.database.Club.Club;
 import com.javatp.javaTP.database.Club.ClubRepository;
+import com.javatp.javaTP.database.Dt.DtRepository;
+import com.javatp.javaTP.database.Dt.Dt;
 import com.javatp.javaTP.database.Jugador.Jugador;
 import com.javatp.javaTP.database.Jugador.JugadorRepository;
 import com.javatp.javaTP.database.Sessions.Sessions;
@@ -31,6 +35,7 @@ import com.javatp.javaTP.exception.ApiRequestException;
 @RestController
 @RequestMapping("/plantilla")
 public class PlantillaController {
+
     @Autowired
     private PlantillaRepository plantillaRepository;
 
@@ -42,6 +47,9 @@ public class PlantillaController {
 
     @Autowired
     private JugadorRepository jugadorRepository;
+
+    @Autowired
+    private DtRepository dtRepository;
 
     private Sessions getSessionByToken(String sessionToken ) {
         try {
@@ -62,6 +70,7 @@ public class PlantillaController {
         }
     }
     
+    @CrossOrigin("*")
     @GetMapping("/query")
     public ArrayList<Plantilla> getPlantillaes(@RequestParam(name = "sessionToken", required = true ) String sessionToken ) {
         Club club = getClubBySessionToken(sessionToken);
@@ -86,6 +95,7 @@ public class PlantillaController {
             String idOne = club.getId();
             String idTwo = plantilla.getClubID();
             if (idOne.compareTo(idTwo) == 0) {
+                System.out.println("PLANTILLA BACKEND" + plantilla.toString() + plantilla.getDtId());
                 return (Plantilla) plantillaRepository.save(plantilla);
             }
             throw new ApiRequestException("Error - No se pudo guardar la plantilla");
@@ -137,6 +147,26 @@ public class PlantillaController {
             }
     }
 
+    @CrossOrigin("*")
+    @GetMapping(path = "/{id}/dt/query")
+    public Dt getDTByPlantillaId(@PathVariable("id") String id, @RequestParam(name = "sessionToken", required = true ) String sessionToken ) {
+        if (id.isEmpty()) {
+            throw new ApiRequestException("Error - Parametros incorrectos");
+        }
+        Club club = getClubBySessionToken(sessionToken);
+             Plantilla plantilla = getPlantillaByIdAndClubId(id, club.getId());
+             String dtID = plantilla.getDtId();
+             if (dtID != null && dtID.compareTo("") != 0 ) {
+                try {
+                    Dt dt = dtRepository.getDTById(dtID).get();
+                    return dt;
+                } catch(RuntimeException e) {
+                    throw new ApiRequestException("Error - No se encontro dt");
+                }
+             }
+             return null;
+    }
+
     private Plantilla getPlantillaById(String id) {
         try {
             Plantilla plantilla = plantillaRepository.getPlantillaById(id).get();
@@ -165,6 +195,37 @@ public class PlantillaController {
             throw new ApiRequestException("Error - No se pudo eliminar la plantilla");
         } catch(RuntimeException err) {
             throw new ApiRequestException("Error - No se pudo eliminar la plantilla");
+        }
+    }
+
+    
+    public void deleteJugadorFromPlantillas(String id, String sessionToken) {
+        List<Plantilla> plantillas = this.getPlantillaes(sessionToken);
+        for (Plantilla plantilla : plantillas) {
+            List<String> jugadores = Arrays.asList(plantilla.getJugadoresIDs());
+            for (String jugador : jugadores) {
+                if (jugador.compareTo(id) == 0) {
+                    ArrayList<String> jugadoresAGuardar = new ArrayList<String>();
+                    Stream<String> jugadoresAFiltrar = jugadores.stream().filter(jug -> (jug.compareTo(id) != 0));
+                    jugadoresAFiltrar.forEach(idd -> jugadoresAGuardar.add(idd));
+                    String arr[] = new String[jugadores.size()-1];
+                    arr = jugadoresAGuardar.toArray(arr);
+                    plantilla.setJugadoresIDs(arr);
+                    this.savePlantilla(plantilla, sessionToken);
+                }
+            }
+        }
+    }
+
+    public void deleteDTFromPlantillas(String id, String sessionToken) {
+        List<Plantilla> plantillas = this.getPlantillaes(sessionToken);
+        for (Plantilla plantilla : plantillas) {
+            System.out.println("llega hasta aca plantillas");
+            String dt = plantilla.getDtId();
+            System.out.println("llega hasta aca plantillas 2" + dt.toString());
+                if (dt.compareTo(id) == 0) {
+                    throw new ApiRequestException("Error - No se pudo eliminar un DT que tiene plantilla asociada");
+                }
         }
     }
 
