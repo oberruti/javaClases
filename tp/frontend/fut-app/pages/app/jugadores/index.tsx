@@ -786,7 +786,7 @@ export const getServerSideProps: GetServerSideProps = async ({
     ) {
       return {
         props: {
-          criticalError: club.message,
+          criticalError: jugadores.message,
         },
       };
     }
