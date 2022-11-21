@@ -22,7 +22,7 @@ public class SessionsController {
     }
 
     public String getAdminEmail() {
-        return ("octavioberruti8@gmail.com");
+        return ("tpjavaberruti@gmail.com");
     }
 
     private Sessions getSessionByToken(String sessionToken ) {
