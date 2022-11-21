@@ -8,7 +8,10 @@ export default NextAuth({
   callbacks: {
     session: async ({ session, token, user }) => {
       return {
-        session,
+        session: {
+          ...session,
+          isAdmin: user?.email === process.env.ADMIN_EMAIL,
+        },
         token,
         user,
       }

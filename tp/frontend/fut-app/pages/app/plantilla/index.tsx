@@ -184,6 +184,14 @@ function Filter({
   );
 }
 
+type DT = {
+  id: string;
+  nombre: string;
+  liga: string;
+  nacionalidad: string;
+  clubID: string;
+};
+
 type PlantillaRow = {
   id: string;
   nombre: string;
@@ -191,6 +199,7 @@ type PlantillaRow = {
   esTitular: boolean;
   club: string;
   jugadores: Jugadores;
+  dt: DT;
 };
 
 interface Club {
@@ -207,6 +216,7 @@ interface Plantilla {
   tactica: string;
   esTitular: boolean;
   clubID: string;
+  dtId: string;
   jugadoresIDs: string[];
 }
 
@@ -218,6 +228,7 @@ type PlantillasPageProps = {
   token?: string;
   plantillasYClub?: PlantillaRow[];
   listaJugadores?: Jugadores;
+  listaDTs?: DT[];
   criticalError?: string;
 };
 
@@ -227,6 +238,7 @@ function PlantillaPage({
   token = "",
   plantillasYClub = [],
   listaJugadores = [],
+  listaDTs = [],
   criticalError,
 }: PlantillasPageProps) {
   const router = useRouter();
@@ -299,6 +311,16 @@ function PlantillaPage({
         accessorKey: "club",
       },
       {
+        header: "DT",
+        accessorKey: "dt",
+        cell: ({ row }) => (
+          <div>
+            {/* @ts-ignore */}
+            <div key={row.getValue("dt").id}>{row.getValue("dt").nombre}</div>
+          </div>
+        ),
+      },
+      {
         header: "Jugadores",
         accessorKey: "jugadores",
         cell: ({ row }) => (
@@ -325,6 +347,7 @@ function PlantillaPage({
   const [tactica, setTactica] = useState<{ id: string; value: string }>();
   const [esTitular, setEsTitular] = useState<undefined | boolean>(undefined);
   const [jugadores, setJugadores] = useState<Jugadores>([]);
+  const [dt, setDt] = useState<DT>();
 
   const columns = useMemo(() => COLUMNS, []);
   const [rowSelection, setRowSelection] = useState({});
@@ -359,6 +382,7 @@ function PlantillaPage({
     setTactica(TACTICAS.find((value) => value.value === row.tactica));
     setEsTitular(row.esTitular);
     setJugadores(row.jugadores);
+    setDt(row.dt);
     setIsAdding(false);
     setIsEditing(true);
   };
@@ -375,6 +399,7 @@ function PlantillaPage({
     setNombre("");
     setTactica(undefined);
     setEsTitular(undefined);
+    setDt(undefined);
     setJugadores([]);
     setErrorMessage("");
     setIsAdding(false);
@@ -390,6 +415,7 @@ function PlantillaPage({
         tactica: tactica?.value,
         clubID: club.id,
         jugadoresIDs: jugadores.map((jugador) => jugador.id),
+        dtId: dt?.id,
       };
 
       renderToast("loading", "Guardando plantilla modificada");
@@ -424,6 +450,7 @@ function PlantillaPage({
         esTitular: !!esTitular,
         tactica: tactica?.value,
         clubID: club.id,
+        dtId: dt?.id,
         jugadoresIDs: jugadores.map((jugador) => jugador.id),
       };
       renderToast("loading", "Guardando plantilla nueva");
@@ -674,6 +701,26 @@ function PlantillaPage({
                 setEsTitular(event.target.checked);
               }}
             />
+            <div style={styles.maybeTitle}>DT</div>
+            <div
+              style={{
+                minWidth: "50%",
+                width: "50%",
+                height: "100px",
+                display: "flex",
+                alignContent: "center",
+                alignItems: "center",
+                alignSelf: "center",
+              }}
+            >
+              <DropdownList
+                data={listaDTs}
+                dataKey="id"
+                textField="nombre"
+                value={dt}
+                onChange={setDt}
+              />
+            </div>
             <div style={styles.maybeTitle}>Jugadores:</div>
             <div
               style={{
@@ -801,10 +848,34 @@ export const getServerSideProps: GetServerSideProps = async ({
     return [];
   };
 
+  const getDTByPlantillaID = async (id: String) => {
+    const dtByPlantillaIdRes = await fetch(
+      `${process.env.BACKEND_URL}/plantilla/${id}/dt/query?sessionToken=${token}`
+    );
+    const dtByPlantillaId = await dtByPlantillaIdRes.json();
+
+    if (!dtByPlantillaIdRes.ok) {
+      {
+        return {
+          criticalError: dtByPlantillaId.message,
+        };
+      }
+    }
+
+    if (dtByPlantillaId) {
+      return dtByPlantillaId;
+    }
+    return;
+  };
+
   const getPlantillaByPlantilla = async (plantilla) => {
     const jugadores = await getJugadoresByPlantillaID(plantilla.id);
     if (jugadores.criticalError) {
       return jugadores;
+    }
+    const dt = await getDTByPlantillaID(plantilla.id);
+    if (dt.criticalError) {
+      return dt;
     }
     return {
       id: plantilla.id,
@@ -813,6 +884,7 @@ export const getServerSideProps: GetServerSideProps = async ({
       esTitular: plantilla.esTitular,
       club: club.nombre,
       jugadores,
+      dt,
     };
   };
 
@@ -858,6 +930,26 @@ export const getServerSideProps: GetServerSideProps = async ({
     }
   }
 
+  const resDts = await fetch(
+    `${process.env.BACKEND_URL}/dt/query?sessionToken=${token}`
+  );
+  const dts = await resDts.json();
+
+  if (!resDts.ok) {
+    if (
+      jugadores.message === ERRORES.NO_CLUB ||
+      jugadores.message === ERRORES.NO_SESSION
+    ) {
+      return {
+        props: {
+          criticalError: dts.message,
+        },
+      };
+    }
+  }
+
+  console.log("lista dts", dts, "Plantillas", plantillas);
+
   // If user, stay here
   return {
     props: {
@@ -866,6 +958,7 @@ export const getServerSideProps: GetServerSideProps = async ({
       token,
       plantillasYClub: plantillasYClubJson,
       listaJugadores: jugadores,
+      listaDTs: dts,
     },
   };
 };

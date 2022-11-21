@@ -12,53 +12,19 @@ import {
   Table,
   useReactTable,
 } from "@tanstack/react-table";
-import { Layout } from "../../../common/components/page";
-import { COLORS, FONTS } from "../../../styles/style";
+import { Layout } from "../../../../common/components/page";
+import { COLORS, FONTS } from "../../../../styles/style";
 import React from "react";
 import { useRouter } from "next/router";
 import {
   HorizontalStack,
   VerticalStack,
-} from "../../../common/components/flex";
-import { StyleMap } from "../../../common/utils/tsTypes";
+} from "../../../../common/components/flex";
+import { StyleMap } from "../../../../common/utils/tsTypes";
 import { DropdownList } from "react-widgets";
-import { ERRORES } from "../../../common/components/page/utils";
-import ErrorMessage from "../../../common/components/ErrorMessage";
-import useRenderToast from "../useRenderToast";
-
-const PIERNAS = [
-  {
-    id: "derecha",
-    value: "derecha",
-  },
-  {
-    id: "izquierda",
-    value: "izquierda",
-  },
-  {
-    id: "ambas",
-    value: "ambas",
-  },
-];
-
-export const POSICIONES = [
-  {
-    id: "arquero",
-    value: "arquero",
-  },
-  {
-    id: "defensor",
-    value: "defensor",
-  },
-  {
-    id: "mediocampista",
-    value: "mediocampista",
-  },
-  {
-    id: "delantero",
-    value: "delantero",
-  },
-];
+import { ERRORES } from "../../../../common/components/page/utils";
+import ErrorMessage from "../../../../common/components/ErrorMessage";
+import useRenderToast from "../../useRenderToast";
 
 const styles: StyleMap = {
   input: {
@@ -217,15 +183,12 @@ function Filter({
   );
 }
 
-export type JugadorRow = {
+export type DTRow = {
   id: string;
   nombre: string;
   liga: string;
   nacionalidad: string;
-  posicion: string;
-  piernaBuena: string;
-  edad: string;
-  club: string;
+  club: Club;
 };
 
 interface Club {
@@ -236,36 +199,35 @@ interface Club {
   userID: string;
 }
 
-export interface Jugador {
+export interface DT {
   id: string;
   nombre: string;
   liga: string;
   nacionalidad: string;
-  posicion: string;
-  piernaBuena: string;
-  edad: number;
   clubID: string;
 }
 
-export type Jugadores = Jugador[];
+export type DTs = DT[];
 
-type JugadoresPageProps = {
-  jugadores?: Jugadores;
-  club?: Club;
+type DTsPageProps = {
+  dts?: DTs;
+  clubes?: Club[];
   token?: string;
   criticalError?: string;
+  isAdmin?: boolean;
 };
 
-function JugadoresPage({
-  jugadores = [],
-  club,
+function DTsPage({
+  dts = [],
+  clubes = [],
   token = "",
   criticalError,
-}: JugadoresPageProps) {
+  isAdmin,
+}: DTsPageProps) {
   const router = useRouter();
   const renderToast = useRenderToast();
 
-  const COLUMNS = useMemo<ColumnDef<JugadorRow>[]>(
+  const COLUMNS = useMemo<ColumnDef<DTRow>[]>(
     () => [
       {
         id: "select",
@@ -296,37 +258,31 @@ function JugadoresPage({
         accessorKey: "nacionalidad",
       },
       {
-        header: "Posicion",
-        accessorKey: "posicion",
-      },
-      {
-        header: "Pierna Buena",
-        accessorKey: "piernaBuena",
-      },
-      {
-        header: "Edad",
-        accessorKey: "edad",
-      },
-      {
         header: "Club",
         accessorKey: "club",
+        cell: ({ row }) => (
+          <div>
+            {/* @ts-ignore */}
+            <div key={row.getValue("club").id}>
+              {/* @ts-ignore */}
+              {row.getValue("club").nombre}
+            </div>
+          </div>
+        ),
       },
     ],
     []
   );
 
-  const jugadoresYClub = jugadores.map((jugador) => ({
-    id: jugador.id,
-    nombre: jugador.nombre,
-    liga: jugador.liga,
-    nacionalidad: jugador.nacionalidad,
-    posicion: jugador.posicion,
-    piernaBuena: jugador.piernaBuena,
-    edad: jugador.edad.toString(),
-    club: club?.nombre,
+  const dtsYClub = dts.map((dt) => ({
+    id: dt.id,
+    nombre: dt.nombre,
+    liga: dt.liga,
+    nacionalidad: dt.nacionalidad,
+    club: clubes.find((club) => club.id === dt.clubID),
   }));
 
-  const [data, setData] = useState(jugadoresYClub);
+  const [data, setData] = useState(dtsYClub);
   const [isEditing, setIsEditing] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
@@ -335,12 +291,7 @@ function JugadoresPage({
   const [nombre, setNombre] = useState("");
   const [liga, setLiga] = useState("");
   const [nacionalidad, setNacionalidad] = useState("");
-  const [posicion, setPosicion] = useState<{ id: string; value: string }>();
-  const [piernaBuena, setPiernaBuena] = useState<{
-    id: string;
-    value: string;
-  }>();
-  const [edad, setEdad] = useState("");
+  const [club, setClub] = useState<Club>();
 
   const columns = useMemo(() => COLUMNS, []);
   const [rowSelection, setRowSelection] = useState({});
@@ -371,9 +322,7 @@ function JugadoresPage({
     setNombre(row.nombre);
     setLiga(row.liga);
     setNacionalidad(row.nacionalidad);
-    setPosicion(POSICIONES.find((value) => value.value === row.posicion));
-    setPiernaBuena(PIERNAS.find((value) => value.value === row.piernaBuena));
-    setEdad(row.edad);
+    setClub(row.club);
     setIsAdding(false);
     setIsEditing(true);
   };
@@ -389,33 +338,28 @@ function JugadoresPage({
     setNombre("");
     setLiga("");
     setNacionalidad("");
-    setPosicion(undefined);
-    setPiernaBuena(undefined);
-    setEdad("");
     setErrorMessage("");
+    setClub(undefined);
     setIsAdding(false);
     setIsEditing(false);
   };
 
   const onConfirmSelected = async () => {
     if (isEditing) {
-      const jugador = {
+      const dt = {
         id,
         nombre,
-        edad: Number.parseInt(edad),
         nacionalidad,
         liga,
-        posicion: posicion?.value,
-        piernaBuena: piernaBuena?.value,
-        clubID: club.id,
+        clubID: club?.id,
       };
 
-      renderToast("loading", "Guardando jugador modificado");
+      renderToast("loading", "Guardando DT modificado");
       const res = await fetch(
-        `${process.env.BACKEND_URL}/jugador/query?sessionToken=${token}`,
+        `${process.env.BACKEND_URL}/dt/admin/query?sessionToken=${token}`,
         {
           method: "POST",
-          body: JSON.stringify(jugador),
+          body: JSON.stringify(dt),
           headers: {
             "Content-type": "application/json; charset=UTF-8",
           },
@@ -426,31 +370,28 @@ function JugadoresPage({
         renderToast("error", data.message);
       } else {
         if (data) {
-          renderToast("success", "Jugador modificado correctamente", () => {
+          renderToast("success", "DT modificado correctamente", () => {
             onCancel();
             router.reload();
           });
         } else {
-          renderToast("error", "No se pudo guardar el jugador.");
+          renderToast("error", "No se pudo guardar el DT.");
         }
       }
     } else {
-      const jugador = {
+      const dt = {
         nombre,
-        edad: Number.parseInt(edad),
         nacionalidad,
         liga,
-        posicion: posicion?.value,
-        piernaBuena: piernaBuena?.value,
-        clubID: club.id,
+        clubID: club?.id,
       };
 
-      renderToast("loading", "Guardando jugador nuevo");
+      renderToast("loading", "Guardando DT nuevo");
       const res = await fetch(
-        `${process.env.BACKEND_URL}/jugador/query?sessionToken=${token}`,
+        `${process.env.BACKEND_URL}/dt/admin/query?sessionToken=${token}`,
         {
           method: "POST",
-          body: JSON.stringify(jugador),
+          body: JSON.stringify(dt),
           headers: {
             "Content-type": "application/json; charset=UTF-8",
           },
@@ -461,12 +402,12 @@ function JugadoresPage({
         renderToast("error", data.message);
       } else {
         if (data) {
-          renderToast("success", "Jugador creado correctamente", () => {
+          renderToast("success", "DT creado correctamente", () => {
             onCancel();
             router.reload();
           });
         } else {
-          renderToast("error", "No se pudo guardar el jugador.");
+          renderToast("error", "No se pudo guardar el DT.");
         }
       }
     }
@@ -474,10 +415,10 @@ function JugadoresPage({
 
   const onDeleteSelection = async () => {
     const id = table.getSelectedRowModel().flatRows[0].original.id;
-    renderToast("loading", "Eliminando jugador");
+    renderToast("loading", "Eliminando DT");
     try {
       const resEliminarJugadores = await fetch(
-        `${process.env.BACKEND_URL}/jugador/${id}/query?sessionToken=${token}`,
+        `${process.env.BACKEND_URL}/dt/${id}/admin/query?sessionToken=${token}`,
         {
           method: "delete",
         }
@@ -487,11 +428,11 @@ function JugadoresPage({
         renderToast("error", eliminado.message);
       } else {
         if (eliminado) {
-          renderToast("success", "Jugador eliminado correctamente", () =>
+          renderToast("success", "DT eliminado correctamente", () =>
             router.reload()
           );
         } else {
-          renderToast("error", "No se pudo eliminar el jugador.");
+          renderToast("error", "No se pudo eliminar el DT.");
         }
       }
     } catch (e) {
@@ -501,14 +442,14 @@ function JugadoresPage({
 
   if (criticalError) {
     return (
-      <Layout>
+      <Layout isAdmin={isAdmin}>
         <ErrorMessage message={criticalError} />
       </Layout>
     );
   }
 
   return (
-    <Layout>
+    <Layout isAdmin={isAdmin}>
       <div className="container">
         <table
           style={{
@@ -594,7 +535,7 @@ function JugadoresPage({
             }}
             onClick={onAdding}
           >
-            Agregar Jugador
+            Agregar DT
           </button>
           <button
             style={{
@@ -671,7 +612,7 @@ function JugadoresPage({
                 setNacionalidad(event.target.value);
               }}
             />
-            <div style={styles.maybeTitle}>Posicion</div>
+            <div style={styles.maybeTitle}>Club</div>
             <div
               style={{
                 minWidth: "50%",
@@ -684,43 +625,13 @@ function JugadoresPage({
               }}
             >
               <DropdownList
-                data={POSICIONES}
+                data={clubes}
                 dataKey="id"
-                textField="value"
-                value={posicion}
-                onChange={setPosicion}
+                textField="nombre"
+                value={club}
+                onChange={setClub}
               />
             </div>
-            <div style={styles.maybeTitle}>Pierna Buena</div>
-            <div
-              style={{
-                minWidth: "50%",
-                width: "50%",
-                height: "100px",
-                display: "flex",
-                alignContent: "center",
-                alignItems: "center",
-                alignSelf: "center",
-              }}
-            >
-              <DropdownList
-                data={PIERNAS}
-                dataKey="id"
-                textField="value"
-                value={piernaBuena}
-                onChange={setPiernaBuena}
-              />
-            </div>
-            <div style={styles.maybeTitle}>{edad == "" ? <></> : "Edad"}</div>
-            <input
-              style={styles.input}
-              placeholder="Edad"
-              name="edad"
-              value={edad}
-              onChange={(event) => {
-                setEdad(event.target.value);
-              }}
-            />
             <div style={styles.errorMessage}>{errorMessage}</div>
             <HorizontalStack style={{ display: "flex", alignSelf: "center" }}>
               <button style={styles.confirm} onClick={onConfirmSelected}>
@@ -754,46 +665,66 @@ export const getServerSideProps: GetServerSideProps = async ({
     };
   }
 
+  //@ts-ignore
+  if (!session.session.isAdmin) {
+    return {
+      props: {},
+      redirect: {
+        destination: "/app/dashboard",
+        permanent: false,
+      },
+    };
+  }
+
   const token = await getToken({ req, raw: true });
 
-  const resClub = await fetch(
-    `${process.env.BACKEND_URL}/club/query?sessionToken=${token}`
+  const resClubes = await fetch(
+    `${process.env.BACKEND_URL}/club/admin/query?sessionToken=${token}`
   );
-  const club = await resClub.json();
+  const clubes = await resClubes.json();
 
-  if (!resClub.ok) {
+  if (!resClubes.ok) {
     if (
-      club.message === ERRORES.NO_CLUB ||
-      club.message === ERRORES.NO_SESSION
+      clubes.message === ERRORES.NO_CLUB ||
+      clubes.message === ERRORES.NO_SESSION
     ) {
       return {
         props: {
-          criticalError: club.message,
+          criticalError: clubes.message,
+          //@ts-ignore
+          isAdmin: session.session.isAdmin,
         },
       };
     }
   }
 
-  const resJugadores = await fetch(
-    `${process.env.BACKEND_URL}/jugador/query?sessionToken=${token}`
+  const resDTs = await fetch(
+    `${process.env.BACKEND_URL}/dt/admin/query?sessionToken=${token}`
   );
-  const jugadores = await resJugadores.json();
+  const dts = await resDTs.json();
 
-  if (!resJugadores.ok) {
-    if (
-      jugadores.message === ERRORES.NO_CLUB ||
-      jugadores.message === ERRORES.NO_SESSION
-    ) {
+  if (!resDTs.ok) {
+    if (dts.message === ERRORES.NO_CLUB || dts.message === ERRORES.NO_SESSION) {
       return {
         props: {
-          criticalError: jugadores.message,
+          criticalError: dts.message,
+          //@ts-ignore
+          isAdmin: session.session.isAdmin,
         },
       };
     }
   }
 
   // If user, stay here
-  return { props: { jugadores, club, token } };
+  return {
+    props: {
+      dts,
+      clubes,
+      token,
+      //@ts-ignore
+      isAdmin: session.session.isAdmin,
+    },
+  };
 };
 
-export default JugadoresPage;
+export default DTsPage;

@@ -12,53 +12,20 @@ import {
   Table,
   useReactTable,
 } from "@tanstack/react-table";
-import { Layout } from "../../../common/components/page";
-import { COLORS, FONTS } from "../../../styles/style";
+import { Layout } from "../../../../common/components/page";
+import { COLORS, FONTS } from "../../../../styles/style";
 import React from "react";
 import { useRouter } from "next/router";
 import {
   HorizontalStack,
   VerticalStack,
-} from "../../../common/components/flex";
-import { StyleMap } from "../../../common/utils/tsTypes";
-import { DropdownList } from "react-widgets";
-import { ERRORES } from "../../../common/components/page/utils";
-import ErrorMessage from "../../../common/components/ErrorMessage";
-import useRenderToast from "../useRenderToast";
-
-const PIERNAS = [
-  {
-    id: "derecha",
-    value: "derecha",
-  },
-  {
-    id: "izquierda",
-    value: "izquierda",
-  },
-  {
-    id: "ambas",
-    value: "ambas",
-  },
-];
-
-export const POSICIONES = [
-  {
-    id: "arquero",
-    value: "arquero",
-  },
-  {
-    id: "defensor",
-    value: "defensor",
-  },
-  {
-    id: "mediocampista",
-    value: "mediocampista",
-  },
-  {
-    id: "delantero",
-    value: "delantero",
-  },
-];
+} from "../../../../common/components/flex";
+import { StyleMap } from "../../../../common/utils/tsTypes";
+import { Jugador, Jugadores } from "../jugadores";
+import { DropdownList, Multiselect } from "react-widgets";
+import { ERRORES } from "../../../../common/components/page/utils";
+import ErrorMessage from "../../../../common/components/ErrorMessage";
+import useRenderToast from "../../useRenderToast";
 
 const styles: StyleMap = {
   input: {
@@ -217,15 +184,22 @@ function Filter({
   );
 }
 
-export type JugadorRow = {
+type DT = {
   id: string;
   nombre: string;
   liga: string;
   nacionalidad: string;
-  posicion: string;
-  piernaBuena: string;
-  edad: string;
-  club: string;
+  clubID: string;
+};
+
+type PlantillaRow = {
+  id: string;
+  nombre: string;
+  tactica: string;
+  esTitular: boolean;
+  club: Club;
+  jugadores: Jugadores;
+  dt: DT;
 };
 
 interface Club {
@@ -236,36 +210,66 @@ interface Club {
   userID: string;
 }
 
-export interface Jugador {
+interface Plantilla {
   id: string;
   nombre: string;
-  liga: string;
-  nacionalidad: string;
-  posicion: string;
-  piernaBuena: string;
-  edad: number;
+  tactica: string;
+  esTitular: boolean;
   clubID: string;
+  dtId: string;
+  jugadoresIDs: string[];
 }
 
-export type Jugadores = Jugador[];
+type Plantillas = Plantilla[];
 
-type JugadoresPageProps = {
-  jugadores?: Jugadores;
-  club?: Club;
+type PlantillasPageProps = {
+  plantillas?: Plantillas;
+  clubes?: Club[];
   token?: string;
+  plantillasYClub?: PlantillaRow[];
+  listaJugadores?: Jugadores;
+  listaDTs?: DT[];
   criticalError?: string;
+  isAdmin?: boolean;
 };
 
-function JugadoresPage({
-  jugadores = [],
-  club,
+function PlantillaPage({
+  plantillas = [],
+  clubes,
   token = "",
+  plantillasYClub = [],
+  listaJugadores = [],
+  listaDTs = [],
   criticalError,
-}: JugadoresPageProps) {
+  isAdmin,
+}: PlantillasPageProps) {
   const router = useRouter();
   const renderToast = useRenderToast();
 
-  const COLUMNS = useMemo<ColumnDef<JugadorRow>[]>(
+  const TACTICAS = [
+    {
+      id: "442",
+      value: "442",
+    },
+    {
+      id: "433",
+      value: "433",
+    },
+    {
+      id: "4321",
+      value: "4321",
+    },
+    {
+      id: "532",
+      value: "532",
+    },
+    {
+      id: "4411",
+      value: "4411",
+    },
+  ];
+
+  const COLUMNS = useMemo<ColumnDef<PlantillaRow>[]>(
     () => [
       {
         id: "select",
@@ -288,59 +292,74 @@ function JugadoresPage({
         accessorKey: "nombre",
       },
       {
-        header: "Liga",
-        accessorKey: "liga",
+        header: "Tactica",
+        accessorKey: "tactica",
       },
       {
-        header: "Nacionalidad",
-        accessorKey: "nacionalidad",
-      },
-      {
-        header: "Posicion",
-        accessorKey: "posicion",
-      },
-      {
-        header: "Pierna Buena",
-        accessorKey: "piernaBuena",
-      },
-      {
-        header: "Edad",
-        accessorKey: "edad",
+        header: "Es plantilla Titular",
+        accessorKey: "esTitular",
+        cell: ({ row }) => (
+          <input
+            disabled
+            type="checkbox"
+            {...{
+              checked: row.getValue("esTitular"),
+            }}
+          />
+        ),
       },
       {
         header: "Club",
         accessorKey: "club",
+        cell: ({ row }) => (
+          <div>
+            {/* @ts-ignore */}
+            <div key={row.getValue("club").id}>
+              {/* @ts-ignore */}
+              {row.getValue("club").nombre}
+            </div>
+          </div>
+        ),
+      },
+      {
+        header: "DT",
+        accessorKey: "dt",
+        cell: ({ row }) => (
+          <div>
+            {/* @ts-ignore */}
+            <div key={row.getValue("dt").id}>{row.getValue("dt").nombre}</div>
+          </div>
+        ),
+      },
+      {
+        header: "Jugadores",
+        accessorKey: "jugadores",
+        cell: ({ row }) => (
+          <div>
+            {/* @ts-ignore */}
+            {row.getValue("jugadores").map((jugador) => {
+              return <div key={jugador.id}>{jugador.nombre}</div>;
+            })}
+          </div>
+        ),
       },
     ],
     []
   );
 
-  const jugadoresYClub = jugadores.map((jugador) => ({
-    id: jugador.id,
-    nombre: jugador.nombre,
-    liga: jugador.liga,
-    nacionalidad: jugador.nacionalidad,
-    posicion: jugador.posicion,
-    piernaBuena: jugador.piernaBuena,
-    edad: jugador.edad.toString(),
-    club: club?.nombre,
-  }));
+  const [data, setData] = useState(plantillasYClub);
 
-  const [data, setData] = useState(jugadoresYClub);
   const [isEditing, setIsEditing] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
   const [id, setId] = useState("");
   const [nombre, setNombre] = useState("");
-  const [liga, setLiga] = useState("");
-  const [nacionalidad, setNacionalidad] = useState("");
-  const [posicion, setPosicion] = useState<{ id: string; value: string }>();
-  const [piernaBuena, setPiernaBuena] = useState<{
-    id: string;
-    value: string;
-  }>();
-  const [edad, setEdad] = useState("");
+  const [tactica, setTactica] = useState<{ id: string; value: string }>();
+  const [esTitular, setEsTitular] = useState<undefined | boolean>(undefined);
+  const [jugadores, setJugadores] = useState<Jugadores>([]);
+  const [dt, setDt] = useState<DT>();
+  const [club, setClub] = useState<Club>();
 
   const columns = useMemo(() => COLUMNS, []);
   const [rowSelection, setRowSelection] = useState({});
@@ -362,6 +381,12 @@ function JugadoresPage({
     getFilteredRowModel: getFilteredRowModel(),
   });
 
+  const esTitularDisabled =
+    (plantillas.some(
+      (plantilla) => plantilla.esTitular && club?.id === plantilla.clubID
+    ) &&
+      !table.getSelectedRowModel().flatRows[0]?.original?.esTitular) ||
+    !club;
   const buttonsDisabled = Object.values(rowSelection).length == 0;
 
   const onEditSelection = () => {
@@ -369,11 +394,11 @@ function JugadoresPage({
     const row = table.getSelectedRowModel().flatRows[0].original;
     setId(row.id);
     setNombre(row.nombre);
-    setLiga(row.liga);
-    setNacionalidad(row.nacionalidad);
-    setPosicion(POSICIONES.find((value) => value.value === row.posicion));
-    setPiernaBuena(PIERNAS.find((value) => value.value === row.piernaBuena));
-    setEdad(row.edad);
+    setTactica(TACTICAS.find((value) => value.value === row.tactica));
+    setEsTitular(row.esTitular);
+    setJugadores(row.jugadores);
+    setDt(row.dt);
+    setClub(row.club);
     setIsAdding(false);
     setIsEditing(true);
   };
@@ -382,16 +407,17 @@ function JugadoresPage({
     onRowSelectionChange({});
     onCancel();
     setIsAdding(true);
+    setIsEditing(false);
   };
 
   const onCancel = () => {
     setId("");
     setNombre("");
-    setLiga("");
-    setNacionalidad("");
-    setPosicion(undefined);
-    setPiernaBuena(undefined);
-    setEdad("");
+    setTactica(undefined);
+    setEsTitular(undefined);
+    setDt(undefined);
+    setClub(undefined);
+    setJugadores([]);
     setErrorMessage("");
     setIsAdding(false);
     setIsEditing(false);
@@ -399,23 +425,22 @@ function JugadoresPage({
 
   const onConfirmSelected = async () => {
     if (isEditing) {
-      const jugador = {
+      const plantilla = {
         id,
         nombre,
-        edad: Number.parseInt(edad),
-        nacionalidad,
-        liga,
-        posicion: posicion?.value,
-        piernaBuena: piernaBuena?.value,
-        clubID: club.id,
+        esTitular: !!esTitular,
+        tactica: tactica?.value,
+        clubID: club?.id,
+        jugadoresIDs: jugadores.map((jugador) => jugador.id),
+        dtId: dt?.id,
       };
 
-      renderToast("loading", "Guardando jugador modificado");
+      renderToast("loading", "Guardando plantilla modificada");
       const res = await fetch(
-        `${process.env.BACKEND_URL}/jugador/query?sessionToken=${token}`,
+        `${process.env.BACKEND_URL}/plantilla/admin/query?sessionToken=${token}`,
         {
           method: "POST",
-          body: JSON.stringify(jugador),
+          body: JSON.stringify(plantilla),
           headers: {
             "Content-type": "application/json; charset=UTF-8",
           },
@@ -423,34 +448,34 @@ function JugadoresPage({
       );
       const data = await res.json();
       if (!res.ok) {
+        console.log("error", data.message);
         renderToast("error", data.message);
       } else {
+        console.log("afuera del error", data);
         if (data) {
-          renderToast("success", "Jugador modificado correctamente", () => {
+          renderToast("success", "Plantilla modificada correctamente", () => {
             onCancel();
             router.reload();
           });
         } else {
-          renderToast("error", "No se pudo guardar el jugador.");
+          renderToast("error", "No se pudo guardar la plantilla");
         }
       }
     } else {
-      const jugador = {
+      const plantilla = {
         nombre,
-        edad: Number.parseInt(edad),
-        nacionalidad,
-        liga,
-        posicion: posicion?.value,
-        piernaBuena: piernaBuena?.value,
-        clubID: club.id,
+        esTitular: !!esTitular,
+        tactica: tactica?.value,
+        clubID: club?.id,
+        dtId: dt?.id,
+        jugadoresIDs: jugadores.map((jugador) => jugador.id),
       };
-
-      renderToast("loading", "Guardando jugador nuevo");
+      renderToast("loading", "Guardando plantilla nueva");
       const res = await fetch(
-        `${process.env.BACKEND_URL}/jugador/query?sessionToken=${token}`,
+        `${process.env.BACKEND_URL}/plantilla/admin/query?sessionToken=${token}`,
         {
           method: "POST",
-          body: JSON.stringify(jugador),
+          body: JSON.stringify(plantilla),
           headers: {
             "Content-type": "application/json; charset=UTF-8",
           },
@@ -461,12 +486,12 @@ function JugadoresPage({
         renderToast("error", data.message);
       } else {
         if (data) {
-          renderToast("success", "Jugador creado correctamente", () => {
+          renderToast("success", "Plantilla creada correctamente", () => {
             onCancel();
             router.reload();
           });
         } else {
-          renderToast("error", "No se pudo guardar el jugador.");
+          renderToast("error", "No se pudo guardar la plantilla");
         }
       }
     }
@@ -474,24 +499,24 @@ function JugadoresPage({
 
   const onDeleteSelection = async () => {
     const id = table.getSelectedRowModel().flatRows[0].original.id;
-    renderToast("loading", "Eliminando jugador");
+    renderToast("loading", "Eliminando plantilla");
     try {
-      const resEliminarJugadores = await fetch(
-        `${process.env.BACKEND_URL}/jugador/${id}/query?sessionToken=${token}`,
+      const resEliminarPlantilla = await fetch(
+        `${process.env.BACKEND_URL}/plantilla/admin/${id}/query?sessionToken=${token}`,
         {
           method: "delete",
         }
       );
-      const eliminado = await resEliminarJugadores.json();
-      if (!resEliminarJugadores.ok) {
+      const eliminado = await resEliminarPlantilla.json();
+      if (!resEliminarPlantilla.ok) {
         renderToast("error", eliminado.message);
       } else {
         if (eliminado) {
-          renderToast("success", "Jugador eliminado correctamente", () =>
+          renderToast("success", "Plantilla eliminada correctamente", () =>
             router.reload()
           );
         } else {
-          renderToast("error", "No se pudo eliminar el jugador.");
+          renderToast("error", "No se pudo eliminar la plantilla.");
         }
       }
     } catch (e) {
@@ -501,14 +526,14 @@ function JugadoresPage({
 
   if (criticalError) {
     return (
-      <Layout>
+      <Layout isAdmin={isAdmin}>
         <ErrorMessage message={criticalError} />
       </Layout>
     );
   }
 
   return (
-    <Layout>
+    <Layout isAdmin={isAdmin}>
       <div className="container">
         <table
           style={{
@@ -594,7 +619,7 @@ function JugadoresPage({
             }}
             onClick={onAdding}
           >
-            Agregar Jugador
+            Agregar Plantilla
           </button>
           <button
             style={{
@@ -637,6 +662,35 @@ function JugadoresPage({
         </div>
         {(isEditing || isAdding) && (
           <VerticalStack style={{ marginTop: "100px" }}>
+            <div style={styles.errorMessage}>{errorMessage}</div>
+            <HorizontalStack style={{ display: "flex", alignSelf: "center" }}>
+              <button style={styles.confirm} onClick={onConfirmSelected}>
+                Confirmar
+              </button>
+              <button style={styles.cancel} onClick={onCancel}>
+                Cancelar
+              </button>
+            </HorizontalStack>
+            <div style={styles.maybeTitle}>Club</div>
+            <div
+              style={{
+                minWidth: "50%",
+                width: "50%",
+                height: "100px",
+                display: "flex",
+                alignContent: "center",
+                alignItems: "center",
+                alignSelf: "center",
+              }}
+            >
+              <DropdownList
+                data={clubes}
+                dataKey="id"
+                textField="nombre"
+                value={club}
+                onChange={setClub}
+              />
+            </div>
             <div style={styles.maybeTitle}>
               {nombre == "" ? <></> : "Nombre"}
             </div>
@@ -649,29 +703,7 @@ function JugadoresPage({
                 setNombre(event.target.value);
               }}
             />
-            <div style={styles.maybeTitle}>{liga == "" ? <></> : "Liga"}</div>
-            <input
-              style={styles.input}
-              placeholder="Liga"
-              name="liga"
-              value={liga}
-              onChange={(event) => {
-                setLiga(event.target.value);
-              }}
-            />
-            <div style={styles.maybeTitle}>
-              {nacionalidad == "" ? <></> : "Nacionalidad"}
-            </div>
-            <input
-              style={styles.input}
-              placeholder="Nacionalidad"
-              name="nacionalidad"
-              value={nacionalidad}
-              onChange={(event) => {
-                setNacionalidad(event.target.value);
-              }}
-            />
-            <div style={styles.maybeTitle}>Posicion</div>
+            <div style={styles.maybeTitle}>Tactica</div>
             <div
               style={{
                 minWidth: "50%",
@@ -684,14 +716,33 @@ function JugadoresPage({
               }}
             >
               <DropdownList
-                data={POSICIONES}
+                data={TACTICAS}
                 dataKey="id"
                 textField="value"
-                value={posicion}
-                onChange={setPosicion}
+                value={tactica}
+                onChange={setTactica}
               />
             </div>
-            <div style={styles.maybeTitle}>Pierna Buena</div>
+            <div style={styles.maybeTitle}>"Es Titular"</div>
+            <div style={styles.errorMessage}>
+              {esTitularDisabled
+                ? !club
+                  ? "Seleccione un club"
+                  : "Ya existe una plantilla titular"
+                : ""}
+            </div>
+            <input
+              disabled={esTitularDisabled}
+              style={styles.input}
+              type="checkbox"
+              placeholder="Es Titular"
+              name="esTitular"
+              checked={esTitular}
+              onChange={(event) => {
+                setEsTitular(event.target.checked);
+              }}
+            />
+            <div style={styles.maybeTitle}>DT</div>
             <div
               style={{
                 minWidth: "50%",
@@ -704,32 +755,62 @@ function JugadoresPage({
               }}
             >
               <DropdownList
-                data={PIERNAS}
+                data={listaDTs.filter((dt: DT) => dt.clubID === club?.id)}
                 dataKey="id"
-                textField="value"
-                value={piernaBuena}
-                onChange={setPiernaBuena}
+                textField="nombre"
+                value={dt}
+                onChange={setDt}
+                disabled={!club}
               />
             </div>
-            <div style={styles.maybeTitle}>{edad == "" ? <></> : "Edad"}</div>
-            <input
-              style={styles.input}
-              placeholder="Edad"
-              name="edad"
-              value={edad}
-              onChange={(event) => {
-                setEdad(event.target.value);
+            <div style={styles.maybeTitle}>Jugadores:</div>
+            <div
+              style={{
+                minWidth: "50%",
+                width: "50%",
+                height: "1000px",
+                display: "flex",
+                alignContent: "center",
+                alignItems: "center",
+                alignSelf: "center",
               }}
-            />
-            <div style={styles.errorMessage}>{errorMessage}</div>
-            <HorizontalStack style={{ display: "flex", alignSelf: "center" }}>
-              <button style={styles.confirm} onClick={onConfirmSelected}>
-                Confirmar
-              </button>
-              <button style={styles.cancel} onClick={onCancel}>
-                Cancelar
-              </button>
-            </HorizontalStack>
+            >
+              <Multiselect
+                disabled={!club}
+                style={{
+                  minWidth: "100%",
+                  alignSelf: "flex-start",
+                }}
+                dataKey="id"
+                textField="nombre"
+                data={listaJugadores.filter(
+                  (jugador: Jugador) => jugador.clubID === club?.id
+                )}
+                value={jugadores}
+                onChange={(value, metadata) => {
+                  if (jugadores.length < 16 || metadata.action === "remove") {
+                    setJugadores(value);
+                  }
+                }}
+                groupBy="posicion"
+                renderListItem={({ item }) => {
+                  if (jugadores.includes(item) || jugadores.length < 16) {
+                    return (
+                      <span>
+                        <strong>{item.nombre}</strong>
+                        {" " + item.nacionalidad}
+                      </span>
+                    );
+                  }
+                  return (
+                    <span style={{ opacity: "75%", cursor: "default" }}>
+                      <strong>{item.nombre}</strong>
+                      {" " + item.nacionalidad}
+                    </span>
+                  );
+                }}
+              />
+            </div>
           </VerticalStack>
         )}
       </div>
@@ -754,28 +835,149 @@ export const getServerSideProps: GetServerSideProps = async ({
     };
   }
 
+  //@ts-ignore
+  if (!session.session.isAdmin) {
+    return {
+      props: {},
+      redirect: {
+        destination: "/app/dashboard",
+        permanent: false,
+      },
+    };
+  }
+
   const token = await getToken({ req, raw: true });
 
-  const resClub = await fetch(
-    `${process.env.BACKEND_URL}/club/query?sessionToken=${token}`
+  const resClubes = await fetch(
+    `${process.env.BACKEND_URL}/club/admin/query?sessionToken=${token}`
   );
-  const club = await resClub.json();
+  const clubes = await resClubes.json();
 
-  if (!resClub.ok) {
+  console.log("clubes", clubes);
+
+  if (!resClubes.ok) {
     if (
-      club.message === ERRORES.NO_CLUB ||
-      club.message === ERRORES.NO_SESSION
+      clubes.message === ERRORES.NO_CLUB ||
+      clubes.message === ERRORES.NO_SESSION
     ) {
       return {
         props: {
-          criticalError: club.message,
+          criticalError: clubes.message,
+          //@ts-ignore
+          isAdmin: session.session.isAdmin,
         },
       };
     }
   }
 
+  const resPlantillas = await fetch(
+    `${process.env.BACKEND_URL}/plantilla/admin/query?sessionToken=${token}`
+  );
+  const plantillas = await resPlantillas.json();
+
+  if (!resPlantillas.ok) {
+    if (
+      plantillas.message === ERRORES.NO_CLUB ||
+      plantillas.message === ERRORES.NO_SESSION
+    ) {
+      return {
+        props: {
+          criticalError: plantillas.message,
+          //@ts-ignore
+          isAdmin: session.session.isAdmin,
+        },
+      };
+    }
+  }
+
+  const getJugadoresByPlantillaID = async (id: String) => {
+    const jugadoresByPlantillaIdRes = await fetch(
+      `${process.env.BACKEND_URL}/plantilla/${id}/admin/jugadores/query?sessionToken=${token}`
+    );
+    const jugadoresByPlantillaId = await jugadoresByPlantillaIdRes.json();
+
+    if (!jugadoresByPlantillaIdRes.ok) {
+      {
+        return {
+          criticalError: jugadoresByPlantillaId.message,
+        };
+      }
+    }
+
+    if (jugadoresByPlantillaId) {
+      return jugadoresByPlantillaId;
+    }
+    return [];
+  };
+
+  const getDTByPlantillaID = async (id: String) => {
+    const dtByPlantillaIdRes = await fetch(
+      `${process.env.BACKEND_URL}/plantilla/${id}/admin/dt/query?sessionToken=${token}`
+    );
+    const dtByPlantillaId = await dtByPlantillaIdRes.json();
+
+    if (!dtByPlantillaIdRes.ok) {
+      {
+        return {
+          criticalError: dtByPlantillaId.message,
+        };
+      }
+    }
+
+    if (dtByPlantillaId) {
+      return dtByPlantillaId;
+    }
+    return;
+  };
+
+  const getPlantillaByPlantilla = async (plantilla) => {
+    const jugadores = await getJugadoresByPlantillaID(plantilla.id);
+    if (jugadores.criticalError) {
+      return jugadores;
+    }
+    const dt = await getDTByPlantillaID(plantilla.id);
+    if (dt.criticalError) {
+      return dt;
+    }
+    return {
+      id: plantilla.id,
+      nombre: plantilla.nombre,
+      tactica: plantilla.tactica,
+      esTitular: plantilla.esTitular,
+      club: clubes.find((club) => club.id === plantilla.clubID),
+      jugadores,
+      dt,
+    };
+  };
+
+  const plantillasYClub = async () => {
+    const plantillasDone = [];
+
+    for (var i = 0; i < plantillas.length; i++) {
+      const plant = await getPlantillaByPlantilla(plantillas[i]);
+      if (plant.criticalError) {
+        return plant;
+      }
+      plantillasDone.push(plant);
+    }
+
+    return plantillasDone;
+  };
+
+  const plantillasYClubJson = await plantillasYClub();
+
+  if (plantillasYClubJson.criticalError) {
+    return {
+      props: {
+        criticalError: plantillasYClubJson.criticalError,
+        //@ts-ignore
+        isAdmin: session.session.isAdmin,
+      },
+    };
+  }
+
   const resJugadores = await fetch(
-    `${process.env.BACKEND_URL}/jugador/query?sessionToken=${token}`
+    `${process.env.BACKEND_URL}/jugador/admin/query?sessionToken=${token}`
   );
   const jugadores = await resJugadores.json();
 
@@ -787,13 +989,46 @@ export const getServerSideProps: GetServerSideProps = async ({
       return {
         props: {
           criticalError: jugadores.message,
+          //@ts-ignore
+          isAdmin: session.session.isAdmin,
+        },
+      };
+    }
+  }
+
+  const resDts = await fetch(
+    `${process.env.BACKEND_URL}/dt/admin/query?sessionToken=${token}`
+  );
+  const dts = await resDts.json();
+
+  if (!resDts.ok) {
+    if (
+      jugadores.message === ERRORES.NO_CLUB ||
+      jugadores.message === ERRORES.NO_SESSION
+    ) {
+      return {
+        props: {
+          criticalError: dts.message,
+          //@ts-ignore
+          isAdmin: session.session.isAdmin,
         },
       };
     }
   }
 
   // If user, stay here
-  return { props: { jugadores, club, token } };
+  return {
+    props: {
+      plantillas,
+      clubes,
+      token,
+      plantillasYClub: plantillasYClubJson,
+      listaJugadores: jugadores,
+      listaDTs: dts,
+      //@ts-ignore
+      isAdmin: session.session.isAdmin,
+    },
+  };
 };
 
-export default JugadoresPage;
+export default PlantillaPage;

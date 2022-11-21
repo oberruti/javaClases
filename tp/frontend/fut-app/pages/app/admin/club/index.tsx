@@ -12,19 +12,19 @@ import {
   Table,
   useReactTable,
 } from "@tanstack/react-table";
-import { Layout } from "../../../common/components/page";
-import { COLORS, FONTS } from "../../../styles/style";
+import { Layout } from "../../../../common/components/page";
+import { COLORS, FONTS } from "../../../../styles/style";
 import React from "react";
 import { useRouter } from "next/router";
 import {
   HorizontalStack,
   VerticalStack,
-} from "../../../common/components/flex";
-import { StyleMap } from "../../../common/utils/tsTypes";
+} from "../../../../common/components/flex";
+import { StyleMap } from "../../../../common/utils/tsTypes";
 import { DropdownList } from "react-widgets";
-import { ERRORES } from "../../../common/components/page/utils";
-import ErrorMessage from "../../../common/components/ErrorMessage";
-import useRenderToast from "../useRenderToast";
+import { ERRORES } from "../../../../common/components/page/utils";
+import ErrorMessage from "../../../../common/components/ErrorMessage";
+import useRenderToast from "../../useRenderToast";
 
 const styles: StyleMap = {
   input: {
@@ -117,7 +117,73 @@ const styles: StyleMap = {
   },
 };
 
-interface Club {
+function IndeterminateCheckbox({
+  indeterminate,
+  className = "",
+  ...rest
+}: { indeterminate?: boolean } & HTMLProps<HTMLInputElement>) {
+  const ref = useRef<HTMLInputElement>(null!);
+
+  React.useEffect(() => {
+    if (typeof indeterminate === "boolean") {
+      ref.current.indeterminate = !rest.checked && indeterminate;
+    }
+  }, [ref, indeterminate]);
+
+  return (
+    <input
+      type="checkbox"
+      ref={ref}
+      className={className + " cursor-pointer"}
+      {...rest}
+    />
+  );
+}
+
+function Filter({
+  column,
+  table,
+}: {
+  column: Column<any, any>;
+  table: Table<any>;
+}) {
+  const firstValue = table
+    .getPreFilteredRowModel()
+    .flatRows[0]?.getValue(column.id);
+
+  return typeof firstValue === "number" ? (
+    <div className="flex space-x-2">
+      <input
+        type="number"
+        value={((column.getFilterValue() as any)?.[0] ?? "") as string}
+        onChange={(e) =>
+          column.setFilterValue((old: any) => [e.target.value, old?.[1]])
+        }
+        placeholder={`Min`}
+        className="w-24 border shadow rounded"
+      />
+      <input
+        type="number"
+        value={((column.getFilterValue() as any)?.[1] ?? "") as string}
+        onChange={(e) =>
+          column.setFilterValue((old: any) => [old?.[0], e.target.value])
+        }
+        placeholder={`Max`}
+        className="w-24 border shadow rounded"
+      />
+    </div>
+  ) : (
+    <input
+      type="text"
+      value={(column.getFilterValue() ?? "") as string}
+      onChange={(e) => column.setFilterValue(e.target.value)}
+      placeholder={`Search...`}
+      className="w-36 border shadow rounded"
+    />
+  );
+}
+
+export interface Club {
   id: string;
   nombre: string;
   sigla: string;
@@ -125,19 +191,52 @@ interface Club {
   userID: string;
 }
 
+interface User {
+  id: string;
+  name: string;
+  email: string;
+}
+
 type ClubPageProps = {
-  club?: Club;
+  clubs?: Club[];
+  usersLibres?: User[];
   token?: string;
   criticalError?: string;
   userID?: string;
+  isAdmin?: boolean;
+  currentUser?: any;
 };
 
-function ClubPage({ club, token = "", criticalError, userID }: ClubPageProps) {
+function ClubPage({
+  clubs,
+  token = "",
+  usersLibres = [],
+  currentUser,
+  criticalError,
+  userID,
+  isAdmin,
+}: ClubPageProps) {
   const router = useRouter();
   const renderToast = useRenderToast();
 
   const COLUMNS = useMemo<ColumnDef<Club>[]>(
     () => [
+      {
+        id: "select",
+        header: "Select",
+        cell: ({ row }) => (
+          <div className="px-1">
+            <IndeterminateCheckbox
+              type="checkbox"
+              {...{
+                checked: row.getIsSelected(),
+                indeterminate: row.getIsSomeSelected(),
+                onChange: row.getToggleSelectedHandler(),
+              }}
+            />
+          </div>
+        ),
+      },
       {
         header: "Nombre",
         accessorKey: "nombre",
@@ -150,15 +249,15 @@ function ClubPage({ club, token = "", criticalError, userID }: ClubPageProps) {
         header: "Nacionalidad",
         accessorKey: "nacionalidad",
       },
+      {
+        header: "User ID",
+        accessorKey: "userID",
+      },
     ],
     []
   );
 
-  const array = [];
-  if (!!club) {
-    array.push(club);
-  }
-  const [data, setData] = useState(array);
+  const [data, setData] = useState(clubs);
   const [isEditing, setIsEditing] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
@@ -167,10 +266,12 @@ function ClubPage({ club, token = "", criticalError, userID }: ClubPageProps) {
   const [nombre, setNombre] = useState("");
   const [sigla, setSigla] = useState("");
   const [nacionalidad, setNacionalidad] = useState("");
+  const [userId, setUserId] = useState("");
 
   const columns = useMemo(() => COLUMNS, []);
   const [rowSelection, setRowSelection] = useState({});
 
+  const buttonsDisabled = Object.values(rowSelection).length == 0;
   const onRowSelectionChange = (rowSelection: RowSelectionState) => {
     onCancel();
     setRowSelection(rowSelection);
@@ -179,15 +280,23 @@ function ClubPage({ club, token = "", criticalError, userID }: ClubPageProps) {
   const table = useReactTable({
     data,
     columns,
+    state: {
+      rowSelection,
+    },
+    enableMultiRowSelection: false,
+    onRowSelectionChange,
     getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
   });
 
   const onEditSelection = () => {
     onCancel();
-    setId(club.id);
-    setNombre(club.nombre);
-    setSigla(club.sigla);
-    setNacionalidad(club.nacionalidad);
+    const row = table.getSelectedRowModel().flatRows[0].original;
+    setId(row.id);
+    setNombre(row.nombre);
+    setSigla(row.sigla);
+    setNacionalidad(row.nacionalidad);
+    setUserId(row.userID);
     setIsAdding(false);
     setIsEditing(true);
   };
@@ -196,6 +305,7 @@ function ClubPage({ club, token = "", criticalError, userID }: ClubPageProps) {
     onRowSelectionChange({});
     onCancel();
     setIsAdding(true);
+    setIsEditing(false);
   };
 
   const onCancel = () => {
@@ -204,6 +314,7 @@ function ClubPage({ club, token = "", criticalError, userID }: ClubPageProps) {
     setSigla("");
     setNacionalidad("");
     setErrorMessage("");
+    setUserId("");
     setIsAdding(false);
     setIsEditing(false);
   };
@@ -215,7 +326,7 @@ function ClubPage({ club, token = "", criticalError, userID }: ClubPageProps) {
         nombre,
         nacionalidad,
         sigla,
-        userID: userID || array[0].userID,
+        userID: userId,
       };
       renderToast("loading", "Guardando Club modificado");
       const res = await fetch(
@@ -246,7 +357,7 @@ function ClubPage({ club, token = "", criticalError, userID }: ClubPageProps) {
         nombre,
         nacionalidad,
         sigla,
-        userID,
+        userID: userId,
       };
 
       renderToast("loading", "Guardando Club nuevo");
@@ -278,14 +389,14 @@ function ClubPage({ club, token = "", criticalError, userID }: ClubPageProps) {
 
   if (criticalError && criticalError !== ERRORES.NO_CLUB) {
     return (
-      <Layout>
+      <Layout isAdmin={isAdmin}>
         <ErrorMessage message={criticalError} />
       </Layout>
     );
   }
 
   return (
-    <Layout>
+    <Layout isAdmin={isAdmin}>
       <div className="container">
         <table
           style={{
@@ -310,6 +421,11 @@ function ClubPage({ club, token = "", criticalError, userID }: ClubPageProps) {
                       header.column.columnDef.header,
                       header.getContext()
                     )}
+                    {header.column.getCanFilter() ? (
+                      <div>
+                        <Filter column={header.column} table={table} />
+                      </div>
+                    ) : null}
                   </th>
                 ))}
               </tr>
@@ -350,26 +466,25 @@ function ClubPage({ club, token = "", criticalError, userID }: ClubPageProps) {
             alignItems: "center",
           }}
         >
-          {criticalError && (
-            <button
-              style={{
-                border: `1px solid ${COLORS.green}`,
-                margin: "10px",
-                paddingTop: "5px",
-                paddingBottom: "5px",
-                paddingLeft: "15px",
-                paddingRight: "15px",
-                borderRadius: "3px",
-                backgroundColor: "white",
-                color: COLORS.blue,
-                opacity: "100%",
-                cursor: "pointer",
-              }}
-              onClick={onAdding}
-            >
-              Agregar club
-            </button>
-          )}
+          <button
+            style={{
+              border: `1px solid ${COLORS.green}`,
+              margin: "10px",
+              paddingTop: "5px",
+              paddingBottom: "5px",
+              paddingLeft: "15px",
+              paddingRight: "15px",
+              borderRadius: "3px",
+              backgroundColor: "white",
+              color: COLORS.blue,
+              opacity: "100%",
+              cursor: "pointer",
+            }}
+            onClick={onAdding}
+          >
+            Agregar club
+          </button>
+
           {!criticalError && (
             <button
               style={{
@@ -382,8 +497,8 @@ function ClubPage({ club, token = "", criticalError, userID }: ClubPageProps) {
                 borderRadius: "3px",
                 backgroundColor: "white",
                 color: COLORS.blue,
-                opacity: "100%",
-                cursor: "pointer",
+                opacity: buttonsDisabled ? "75%" : "100%",
+                cursor: buttonsDisabled ? "default" : "pointer",
               }}
               onClick={onEditSelection}
             >
@@ -427,6 +542,49 @@ function ClubPage({ club, token = "", criticalError, userID }: ClubPageProps) {
                 setNacionalidad(event.target.value);
               }}
             />
+            <div style={styles.maybeTitle}>User</div>
+            <div
+              style={{
+                minWidth: "50%",
+                width: "50%",
+                height: "100px",
+                display: "flex",
+                alignContent: "center",
+                alignItems: "center",
+                alignSelf: "center",
+              }}
+            >
+              <DropdownList
+                data={
+                  table.getSelectedRowModel().flatRows[0]
+                    ? [
+                        {
+                          id: table.getSelectedRowModel().flatRows[0].original
+                            .userID,
+                          value:
+                            table.getSelectedRowModel().flatRows[0].original
+                              .userID,
+                        },
+                        ...usersLibres.map((user) => {
+                          return {
+                            id: user.id,
+                            value: user.id,
+                          };
+                        }),
+                      ]
+                    : usersLibres.map((user) => {
+                        return {
+                          id: user.id,
+                          value: user.id,
+                        };
+                      })
+                }
+                dataKey="id"
+                textField="value"
+                value={userId}
+                onChange={(user) => setUserId(user.value)}
+              />
+            </div>
             <div style={styles.errorMessage}>{errorMessage}</div>
             <HorizontalStack style={{ display: "flex", alignSelf: "center" }}>
               <button style={styles.confirm} onClick={onConfirmSelected}>
@@ -460,31 +618,76 @@ export const getServerSideProps: GetServerSideProps = async ({
     };
   }
 
+  //@ts-ignore
+  if (!session.session.isAdmin) {
+    return {
+      props: {},
+      redirect: {
+        destination: "/app/dashboard",
+        permanent: false,
+      },
+    };
+  }
+
   const token = await getToken({ req, raw: true });
 
-  const resClub = await fetch(
-    `${process.env.BACKEND_URL}/club/query?sessionToken=${token}`
+  const resClubs = await fetch(
+    `${process.env.BACKEND_URL}/club/admin/query?sessionToken=${token}`
   );
-  const club = await resClub.json();
+  const clubs = await resClubs.json();
 
-  if (!resClub.ok) {
+  if (!resClubs.ok) {
     if (
-      club.message === ERRORES.NO_CLUB ||
-      club.message === ERRORES.NO_SESSION
+      clubs.message === ERRORES.NO_CLUB ||
+      clubs.message === ERRORES.NO_SESSION
     ) {
       return {
         props: {
-          criticalError: club.message,
+          criticalError: clubs.message,
           token,
           //@ts-ignore
           userID: session.user.id,
+          //@ts-ignore
+          isAdmin: session.session.isAdmin,
         },
       };
     }
   }
 
+  const resUsersLibres = await fetch(
+    `${process.env.BACKEND_URL}/users/admin/query?sessionToken=${token}`
+  );
+  const usersLibres = await resUsersLibres.json();
+
+  if (!resUsersLibres.ok) {
+    if (
+      usersLibres.message === ERRORES.NO_CLUB ||
+      usersLibres.message === ERRORES.NO_SESSION
+    ) {
+      return {
+        props: {
+          criticalError: usersLibres.message,
+          token,
+          //@ts-ignore
+          userID: session.user.id,
+          //@ts-ignore
+          isAdmin: session.session.isAdmin,
+        },
+      };
+    }
+  }
   // If user, stay here
-  return { props: { club, token } };
+  console.log("clubs", clubs);
+  return {
+    props: {
+      clubs,
+      usersLibres,
+      token,
+      //@ts-ignore
+      isAdmin: session.session.isAdmin,
+      currentUser: session.user,
+    },
+  };
 };
 
 export default ClubPage;

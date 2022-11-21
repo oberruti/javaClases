@@ -26,6 +26,7 @@ module.exports = {
     GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
     GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
     BACKEND_URL: process.env.BACKEND_URL,
+    ADMIN_EMAIL: process.env.ADMIN_EMAIL,
   },
   //   webpack: (config, { buildId, dev, isServer, defaultLoaders, webpack }) => {
   //     config.node = {

@@ -1,9 +1,24 @@
-import { GetServerSideProps } from 'next';
-import { getSession } from 'next-auth/react';
-import { Layout } from '../../../common/components/page';
+import { GetServerSideProps } from "next";
+import { getSession } from "next-auth/react";
+import { Layout } from "../../../common/components/page";
 
-function DashboardPage() {
-  return <Layout><div style={{display: 'flex', width: '100%', height: '100%', alignItems: 'center', justifyContent:'center', color: 'white'}}>Bienvenido al gestor de Ultimate Team !</div></Layout>;
+function DashboardPage({ isAdmin }: { isAdmin?: boolean }) {
+  return (
+    <Layout isAdmin={isAdmin}>
+      <div
+        style={{
+          display: "flex",
+          width: "100%",
+          height: "100%",
+          alignItems: "center",
+          justifyContent: "center",
+          color: "white",
+        }}
+      >
+        Bienvenido al gestor de Ultimate Team !
+      </div>
+    </Layout>
+  );
 }
 
 export const getServerSideProps: GetServerSideProps = async ({ req, res }) => {
@@ -14,14 +29,15 @@ export const getServerSideProps: GetServerSideProps = async ({ req, res }) => {
     return {
       props: {},
       redirect: {
-        destination: '/acc/login',
+        destination: "/acc/login",
         permanent: false,
       },
     };
   }
 
   // If user, stay here
-  return { props: {} };
+  //@ts-ignore
+  return { props: { isAdmin: session.session.isAdmin } };
 };
 
 export default DashboardPage;

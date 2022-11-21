@@ -9,7 +9,6 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Example;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -23,8 +22,10 @@ import org.springframework.web.bind.annotation.RestController;
 import com.javatp.javaTP.database.Club.Club;
 import com.javatp.javaTP.database.Club.ClubRepository;
 import com.javatp.javaTP.database.Plantilla.Plantilla;
+import com.javatp.javaTP.database.Plantilla.PlantillaController;
 import com.javatp.javaTP.database.Plantilla.PlantillaRepository;
 import com.javatp.javaTP.database.Sessions.Sessions;
+import com.javatp.javaTP.database.Sessions.SessionsController;
 import com.javatp.javaTP.database.Sessions.SessionsRepository;
 import com.javatp.javaTP.exception.ApiRequestException;
 
@@ -41,10 +42,16 @@ public class JugadorController {
     private SessionsRepository sessionsRepository;
 
     @Autowired
+    private SessionsController sessionsController;
+
+    @Autowired
     private ClubRepository clubRepository;
 
     @Autowired
     private PlantillaRepository plantillaRepository;
+
+    @Autowired
+    private PlantillaController plantillaController;
 
     private Sessions getSessionByToken(String sessionToken ) {
         try {
@@ -65,6 +72,7 @@ public class JugadorController {
         }
     }
     
+    @CrossOrigin("*")
     @GetMapping("/query")
     public ArrayList<Jugador> getJugadores(@RequestParam(name = "sessionToken", required = true ) String sessionToken ) {
         Club club = getClubBySessionToken(sessionToken);
@@ -72,6 +80,20 @@ public class JugadorController {
             return (ArrayList<Jugador>) jugadorRepository.findByClubID(club.getId());
         } catch(RuntimeException e) {
             throw new ApiRequestException("Error - no existen jugadores");
+        }
+    }
+
+    @CrossOrigin("*")
+    @GetMapping("/admin/query")
+    public ArrayList<Jugador> getJugadoresAdmin(@RequestParam(name = "sessionToken", required = true ) String sessionToken ) {
+        if (sessionsController.isAdmin(sessionToken)) {
+            try {
+                return (ArrayList<Jugador>) jugadorRepository.findAll();
+            } catch(RuntimeException e) {
+                throw new ApiRequestException("Error - no existen jugadores");
+            }
+        } else {
+            throw new ApiRequestException("Error - usted no esta autenticado");
         }
     }
 
@@ -92,6 +114,25 @@ public class JugadorController {
         } catch(RuntimeException e) {
             throw new ApiRequestException("Error - no se pudo guardar el jugador");
         }
+    }
+
+    @CrossOrigin("*")
+    @PostMapping("/admin/query")
+    public Jugador saveJugadorAdmin(@RequestBody Jugador jugador, @RequestParam(name = "sessionToken", required = true ) String sessionToken ) {
+        if (sessionsController.isAdmin(sessionToken))
+        {
+            if (jugador.clubID.isEmpty() || jugador.edad == null || jugador.liga.isEmpty() || jugador.nacionalidad.isEmpty() || jugador.nombre.isEmpty() || jugador.piernaBuena == null || jugador.posicion == null) {
+                throw new ApiRequestException("Error - campos incorrectos");
+            }
+            try {
+                return (Jugador)jugadorRepository.save(jugador);
+            } catch(RuntimeException e) {
+                throw new ApiRequestException("Error - no se pudo guardar el jugador");
+            }
+        } else {
+            throw new ApiRequestException("Error - usted no esta autorizado");
+        }
+       
     }
 
     private Plantilla getPlantillaById(String id) {
@@ -121,6 +162,26 @@ public class JugadorController {
     }
 
     @CrossOrigin("*")
+    @GetMapping(path = "/{id}/{posicion}/admin/query")
+    public Stream<Jugador> jugadorIdealPosicionAdmin(@PathVariable("id") String id,@PathVariable("posicion") String posicion, @RequestParam(name = "sessionToken", required = true ) String sessionToken ) {
+        if (sessionsController.isAdmin(sessionToken)) {
+            if (id.isEmpty() || posicion.isEmpty()) {
+                throw new ApiRequestException("Error - campos incorrectos");
+            }
+            Plantilla plantilla = getPlantillaById(id);
+            List<Jugador> jugadoresList = this.getJugadoresAdmin(sessionToken);
+            String[] jugadoresEnPlantillaArray = plantilla.getJugadoresIDs();
+            List<String> jugadoresEnPlantilla = Arrays.asList(jugadoresEnPlantillaArray);
+            Stream<Jugador> jugadoresFiltrados = jugadoresList.stream().filter(jugador -> jugadoresEnPlantilla.contains(jugador.id) == false);
+            Stream<Jugador> jugadoresFiltradosPorPosicion = jugadoresFiltrados.filter(jugador -> jugador.getPosicion().compareTo(posicion) == 0);
+    
+            return jugadoresFiltradosPorPosicion;
+        } else {
+            throw new ApiRequestException("Error - usted no esta autorizado");
+        }
+    }
+
+    @CrossOrigin("*")
     @GetMapping(path = "/{id}/query")
     public Optional<Jugador> jugadorByClubId(@PathVariable("id") String id, @RequestParam(name = "sessionToken", required = true ) String sessionToken ) {
         if (id.isEmpty()) {
@@ -143,6 +204,7 @@ public class JugadorController {
         Club club = getClubBySessionToken(sessionToken);
         try {
             Jugador jugador = jugadorRepository.getJugadorById(id).get();
+            plantillaController.deleteJugadorFromPlantillas(id, sessionToken);
 
             String idOne = club.getId();
             String idTwo = jugador.getClubID();
@@ -154,6 +216,26 @@ public class JugadorController {
         } catch(Exception err) {
             throw new ApiRequestException("Error - No se pudo eliminar el jugador");
         }
+    }
+
+    @CrossOrigin("*")
+    @DeleteMapping(path = "/admin/{id}/query")
+    public boolean deleteJugadorAdmin(@PathVariable("id") String id, @RequestParam(name = "sessionToken", required = true ) String sessionToken ) {
+        if (sessionsController.isAdmin(sessionToken)) {
+            if (id.isEmpty()) {
+                throw new ApiRequestException("Error - campos incorrectos");
+            }
+            try {
+                    plantillaController.deleteJugadorFromPlantillasAdmin(id, sessionToken);
+                    jugadorRepository.deleteById(id);
+                    return true;
+            } catch(Exception err) {
+                throw new ApiRequestException("Error - No se pudo eliminar el jugador");
+            }
+        } else {
+            throw new ApiRequestException("Error - usted no esta autorizado");
+        }
+        
     }
 
 }
