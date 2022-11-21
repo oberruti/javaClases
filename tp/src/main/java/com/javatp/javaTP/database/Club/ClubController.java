@@ -1,5 +1,7 @@
 package com.javatp.javaTP.database.Club;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -10,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.javatp.javaTP.database.Sessions.Sessions;
+import com.javatp.javaTP.database.Sessions.SessionsController;
 import com.javatp.javaTP.database.Sessions.SessionsRepository;
 import com.javatp.javaTP.exception.ApiRequestException;
 
@@ -25,6 +28,8 @@ public class ClubController {
     @Autowired
     private SessionsRepository sessionsRepository;
 
+    @Autowired
+    private SessionsController sessionsController;
 
     private Sessions getSessionByToken(String sessionToken ) {
         try {
@@ -37,14 +42,30 @@ public class ClubController {
 
     @CrossOrigin("*")
     @GetMapping("/query")
-    public Club club(@RequestParam(name = "sessionToken", required = true ) String sessionToken ) {
-            Sessions session = getSessionByToken(sessionToken);
+    public Club club(@RequestParam(name = "sessionToken", required = true ) String sessionToken ) {   
+        Sessions session = getSessionByToken(sessionToken);
             try {
                 Club club = clubRepository.getClubByUserId(session.getUserId()).get();
                 return (Club) club;
             } catch (RuntimeException eClub) {
                 throw new ApiRequestException("Error - No existe club asociado");
             }
+    }
+
+    @CrossOrigin("*")
+    @GetMapping("/admin/query")
+    public List<Club> clubAdmin(@RequestParam(name = "sessionToken", required = true ) String sessionToken ) {   
+        if (this.sessionsController.isAdmin(sessionToken)) {
+            try {
+                List<Club> club = clubRepository.findAll();
+                return club;
+            } catch (RuntimeException eClub) {
+                throw new ApiRequestException("Error - No existen clubes asociados");
+            }
+        } else {
+            throw new ApiRequestException("Error - No puede acceder a esta informacion");
+        }
+            
     }
 
     @CrossOrigin("*")
