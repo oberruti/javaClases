@@ -188,7 +188,7 @@ export type DTRow = {
   nombre: string;
   liga: string;
   nacionalidad: string;
-  club: string;
+  club: Club;
 };
 
 interface Club {
@@ -211,7 +211,7 @@ export type DTs = DT[];
 
 type DTsPageProps = {
   dts?: DTs;
-  club?: Club;
+  clubes?: Club[];
   token?: string;
   criticalError?: string;
   isAdmin?: boolean;
@@ -219,7 +219,7 @@ type DTsPageProps = {
 
 function DTsPage({
   dts = [],
-  club,
+  clubes = [],
   token = "",
   criticalError,
   isAdmin,
@@ -260,6 +260,15 @@ function DTsPage({
       {
         header: "Club",
         accessorKey: "club",
+        cell: ({ row }) => (
+          <div>
+            {/* @ts-ignore */}
+            <div key={row.getValue("club").id}>
+              {/* @ts-ignore */}
+              {row.getValue("club").nombre}
+            </div>
+          </div>
+        ),
       },
     ],
     []
@@ -270,7 +279,7 @@ function DTsPage({
     nombre: dt.nombre,
     liga: dt.liga,
     nacionalidad: dt.nacionalidad,
-    club: club?.nombre,
+    club: clubes.find((club) => club.id === dt.clubID),
   }));
 
   const [data, setData] = useState(dtsYClub);
@@ -282,6 +291,7 @@ function DTsPage({
   const [nombre, setNombre] = useState("");
   const [liga, setLiga] = useState("");
   const [nacionalidad, setNacionalidad] = useState("");
+  const [club, setClub] = useState<Club>();
 
   const columns = useMemo(() => COLUMNS, []);
   const [rowSelection, setRowSelection] = useState({});
@@ -312,6 +322,7 @@ function DTsPage({
     setNombre(row.nombre);
     setLiga(row.liga);
     setNacionalidad(row.nacionalidad);
+    setClub(row.club);
     setIsAdding(false);
     setIsEditing(true);
   };
@@ -328,6 +339,7 @@ function DTsPage({
     setLiga("");
     setNacionalidad("");
     setErrorMessage("");
+    setClub(undefined);
     setIsAdding(false);
     setIsEditing(false);
   };
@@ -339,12 +351,12 @@ function DTsPage({
         nombre,
         nacionalidad,
         liga,
-        clubID: club.id,
+        clubID: club?.id,
       };
 
       renderToast("loading", "Guardando DT modificado");
       const res = await fetch(
-        `${process.env.BACKEND_URL}/dt/query?sessionToken=${token}`,
+        `${process.env.BACKEND_URL}/dt/admin/query?sessionToken=${token}`,
         {
           method: "POST",
           body: JSON.stringify(dt),
@@ -371,12 +383,12 @@ function DTsPage({
         nombre,
         nacionalidad,
         liga,
-        clubID: club.id,
+        clubID: club?.id,
       };
 
       renderToast("loading", "Guardando DT nuevo");
       const res = await fetch(
-        `${process.env.BACKEND_URL}/dt/query?sessionToken=${token}`,
+        `${process.env.BACKEND_URL}/dt/admin/query?sessionToken=${token}`,
         {
           method: "POST",
           body: JSON.stringify(dt),
@@ -406,7 +418,7 @@ function DTsPage({
     renderToast("loading", "Eliminando DT");
     try {
       const resEliminarJugadores = await fetch(
-        `${process.env.BACKEND_URL}/dt/${id}/query?sessionToken=${token}`,
+        `${process.env.BACKEND_URL}/dt/${id}/admin/query?sessionToken=${token}`,
         {
           method: "delete",
         }
@@ -600,6 +612,26 @@ function DTsPage({
                 setNacionalidad(event.target.value);
               }}
             />
+            <div style={styles.maybeTitle}>Club</div>
+            <div
+              style={{
+                minWidth: "50%",
+                width: "50%",
+                height: "100px",
+                display: "flex",
+                alignContent: "center",
+                alignItems: "center",
+                alignSelf: "center",
+              }}
+            >
+              <DropdownList
+                data={clubes}
+                dataKey="id"
+                textField="nombre"
+                value={club}
+                onChange={setClub}
+              />
+            </div>
             <div style={styles.errorMessage}>{errorMessage}</div>
             <HorizontalStack style={{ display: "flex", alignSelf: "center" }}>
               <button style={styles.confirm} onClick={onConfirmSelected}>
@@ -646,19 +678,19 @@ export const getServerSideProps: GetServerSideProps = async ({
 
   const token = await getToken({ req, raw: true });
 
-  const resClub = await fetch(
-    `${process.env.BACKEND_URL}/club/query?sessionToken=${token}`
+  const resClubes = await fetch(
+    `${process.env.BACKEND_URL}/club/admin/query?sessionToken=${token}`
   );
-  const club = await resClub.json();
+  const clubes = await resClubes.json();
 
-  if (!resClub.ok) {
+  if (!resClubes.ok) {
     if (
-      club.message === ERRORES.NO_CLUB ||
-      club.message === ERRORES.NO_SESSION
+      clubes.message === ERRORES.NO_CLUB ||
+      clubes.message === ERRORES.NO_SESSION
     ) {
       return {
         props: {
-          criticalError: club.message,
+          criticalError: clubes.message,
           //@ts-ignore
           isAdmin: session.session.isAdmin,
         },
@@ -667,7 +699,7 @@ export const getServerSideProps: GetServerSideProps = async ({
   }
 
   const resDTs = await fetch(
-    `${process.env.BACKEND_URL}/dt/query?sessionToken=${token}`
+    `${process.env.BACKEND_URL}/dt/admin/query?sessionToken=${token}`
   );
   const dts = await resDTs.json();
 
@@ -687,7 +719,7 @@ export const getServerSideProps: GetServerSideProps = async ({
   return {
     props: {
       dts,
-      club,
+      clubes,
       token,
       //@ts-ignore
       isAdmin: session.session.isAdmin,

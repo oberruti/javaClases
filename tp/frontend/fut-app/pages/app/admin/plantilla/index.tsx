@@ -21,7 +21,7 @@ import {
   VerticalStack,
 } from "../../../../common/components/flex";
 import { StyleMap } from "../../../../common/utils/tsTypes";
-import { Jugadores } from "../jugadores";
+import { Jugador, Jugadores } from "../jugadores";
 import { DropdownList, Multiselect } from "react-widgets";
 import { ERRORES } from "../../../../common/components/page/utils";
 import ErrorMessage from "../../../../common/components/ErrorMessage";
@@ -197,7 +197,7 @@ type PlantillaRow = {
   nombre: string;
   tactica: string;
   esTitular: boolean;
-  club: string;
+  club: Club;
   jugadores: Jugadores;
   dt: DT;
 };
@@ -224,7 +224,7 @@ type Plantillas = Plantilla[];
 
 type PlantillasPageProps = {
   plantillas?: Plantillas;
-  club?: Club;
+  clubes?: Club[];
   token?: string;
   plantillasYClub?: PlantillaRow[];
   listaJugadores?: Jugadores;
@@ -235,7 +235,7 @@ type PlantillasPageProps = {
 
 function PlantillaPage({
   plantillas = [],
-  club,
+  clubes,
   token = "",
   plantillasYClub = [],
   listaJugadores = [],
@@ -311,6 +311,15 @@ function PlantillaPage({
       {
         header: "Club",
         accessorKey: "club",
+        cell: ({ row }) => (
+          <div>
+            {/* @ts-ignore */}
+            <div key={row.getValue("club").id}>
+              {/* @ts-ignore */}
+              {row.getValue("club").nombre}
+            </div>
+          </div>
+        ),
       },
       {
         header: "DT",
@@ -350,6 +359,7 @@ function PlantillaPage({
   const [esTitular, setEsTitular] = useState<undefined | boolean>(undefined);
   const [jugadores, setJugadores] = useState<Jugadores>([]);
   const [dt, setDt] = useState<DT>();
+  const [club, setClub] = useState<Club>();
 
   const columns = useMemo(() => COLUMNS, []);
   const [rowSelection, setRowSelection] = useState({});
@@ -372,8 +382,11 @@ function PlantillaPage({
   });
 
   const esTitularDisabled =
-    plantillas.some((plantilla) => plantilla.esTitular) &&
-    !table.getSelectedRowModel().flatRows[0]?.original?.esTitular;
+    (plantillas.some(
+      (plantilla) => plantilla.esTitular && club?.id === plantilla.clubID
+    ) &&
+      !table.getSelectedRowModel().flatRows[0]?.original?.esTitular) ||
+    !club;
   const buttonsDisabled = Object.values(rowSelection).length == 0;
 
   const onEditSelection = () => {
@@ -385,6 +398,7 @@ function PlantillaPage({
     setEsTitular(row.esTitular);
     setJugadores(row.jugadores);
     setDt(row.dt);
+    setClub(row.club);
     setIsAdding(false);
     setIsEditing(true);
   };
@@ -402,6 +416,7 @@ function PlantillaPage({
     setTactica(undefined);
     setEsTitular(undefined);
     setDt(undefined);
+    setClub(undefined);
     setJugadores([]);
     setErrorMessage("");
     setIsAdding(false);
@@ -415,14 +430,14 @@ function PlantillaPage({
         nombre,
         esTitular: !!esTitular,
         tactica: tactica?.value,
-        clubID: club.id,
+        clubID: club?.id,
         jugadoresIDs: jugadores.map((jugador) => jugador.id),
         dtId: dt?.id,
       };
 
       renderToast("loading", "Guardando plantilla modificada");
       const res = await fetch(
-        `${process.env.BACKEND_URL}/plantilla/query?sessionToken=${token}`,
+        `${process.env.BACKEND_URL}/plantilla/admin/query?sessionToken=${token}`,
         {
           method: "POST",
           body: JSON.stringify(plantilla),
@@ -451,13 +466,13 @@ function PlantillaPage({
         nombre,
         esTitular: !!esTitular,
         tactica: tactica?.value,
-        clubID: club.id,
+        clubID: club?.id,
         dtId: dt?.id,
         jugadoresIDs: jugadores.map((jugador) => jugador.id),
       };
       renderToast("loading", "Guardando plantilla nueva");
       const res = await fetch(
-        `${process.env.BACKEND_URL}/plantilla/query?sessionToken=${token}`,
+        `${process.env.BACKEND_URL}/plantilla/admin/query?sessionToken=${token}`,
         {
           method: "POST",
           body: JSON.stringify(plantilla),
@@ -487,7 +502,7 @@ function PlantillaPage({
     renderToast("loading", "Eliminando plantilla");
     try {
       const resEliminarPlantilla = await fetch(
-        `${process.env.BACKEND_URL}/plantilla/${id}/query?sessionToken=${token}`,
+        `${process.env.BACKEND_URL}/plantilla/admin/${id}/query?sessionToken=${token}`,
         {
           method: "delete",
         }
@@ -656,6 +671,26 @@ function PlantillaPage({
                 Cancelar
               </button>
             </HorizontalStack>
+            <div style={styles.maybeTitle}>Club</div>
+            <div
+              style={{
+                minWidth: "50%",
+                width: "50%",
+                height: "100px",
+                display: "flex",
+                alignContent: "center",
+                alignItems: "center",
+                alignSelf: "center",
+              }}
+            >
+              <DropdownList
+                data={clubes}
+                dataKey="id"
+                textField="nombre"
+                value={club}
+                onChange={setClub}
+              />
+            </div>
             <div style={styles.maybeTitle}>
               {nombre == "" ? <></> : "Nombre"}
             </div>
@@ -690,7 +725,11 @@ function PlantillaPage({
             </div>
             <div style={styles.maybeTitle}>"Es Titular"</div>
             <div style={styles.errorMessage}>
-              {esTitularDisabled ? "Ya existe una plantilla titular" : ""}
+              {esTitularDisabled
+                ? !club
+                  ? "Seleccione un club"
+                  : "Ya existe una plantilla titular"
+                : ""}
             </div>
             <input
               disabled={esTitularDisabled}
@@ -716,11 +755,12 @@ function PlantillaPage({
               }}
             >
               <DropdownList
-                data={listaDTs}
+                data={listaDTs.filter((dt: DT) => dt.clubID === club?.id)}
                 dataKey="id"
                 textField="nombre"
                 value={dt}
                 onChange={setDt}
+                disabled={!club}
               />
             </div>
             <div style={styles.maybeTitle}>Jugadores:</div>
@@ -736,13 +776,16 @@ function PlantillaPage({
               }}
             >
               <Multiselect
+                disabled={!club}
                 style={{
                   minWidth: "100%",
                   alignSelf: "flex-start",
                 }}
                 dataKey="id"
                 textField="nombre"
-                data={listaJugadores}
+                data={listaJugadores.filter(
+                  (jugador: Jugador) => jugador.clubID === club?.id
+                )}
                 value={jugadores}
                 onChange={(value, metadata) => {
                   if (jugadores.length < 16 || metadata.action === "remove") {
@@ -805,19 +848,21 @@ export const getServerSideProps: GetServerSideProps = async ({
 
   const token = await getToken({ req, raw: true });
 
-  const resClub = await fetch(
-    `${process.env.BACKEND_URL}/club/query?sessionToken=${token}`
+  const resClubes = await fetch(
+    `${process.env.BACKEND_URL}/club/admin/query?sessionToken=${token}`
   );
-  const club = await resClub.json();
+  const clubes = await resClubes.json();
 
-  if (!resClub.ok) {
+  console.log("clubes", clubes);
+
+  if (!resClubes.ok) {
     if (
-      club.message === ERRORES.NO_CLUB ||
-      club.message === ERRORES.NO_SESSION
+      clubes.message === ERRORES.NO_CLUB ||
+      clubes.message === ERRORES.NO_SESSION
     ) {
       return {
         props: {
-          criticalError: club.message,
+          criticalError: clubes.message,
           //@ts-ignore
           isAdmin: session.session.isAdmin,
         },
@@ -826,7 +871,7 @@ export const getServerSideProps: GetServerSideProps = async ({
   }
 
   const resPlantillas = await fetch(
-    `${process.env.BACKEND_URL}/plantilla/query?sessionToken=${token}`
+    `${process.env.BACKEND_URL}/plantilla/admin/query?sessionToken=${token}`
   );
   const plantillas = await resPlantillas.json();
 
@@ -847,7 +892,7 @@ export const getServerSideProps: GetServerSideProps = async ({
 
   const getJugadoresByPlantillaID = async (id: String) => {
     const jugadoresByPlantillaIdRes = await fetch(
-      `${process.env.BACKEND_URL}/plantilla/${id}/jugadores/query?sessionToken=${token}`
+      `${process.env.BACKEND_URL}/plantilla/${id}/admin/jugadores/query?sessionToken=${token}`
     );
     const jugadoresByPlantillaId = await jugadoresByPlantillaIdRes.json();
 
@@ -867,7 +912,7 @@ export const getServerSideProps: GetServerSideProps = async ({
 
   const getDTByPlantillaID = async (id: String) => {
     const dtByPlantillaIdRes = await fetch(
-      `${process.env.BACKEND_URL}/plantilla/${id}/dt/query?sessionToken=${token}`
+      `${process.env.BACKEND_URL}/plantilla/${id}/admin/dt/query?sessionToken=${token}`
     );
     const dtByPlantillaId = await dtByPlantillaIdRes.json();
 
@@ -899,7 +944,7 @@ export const getServerSideProps: GetServerSideProps = async ({
       nombre: plantilla.nombre,
       tactica: plantilla.tactica,
       esTitular: plantilla.esTitular,
-      club: club.nombre,
+      club: clubes.find((club) => club.id === plantilla.clubID),
       jugadores,
       dt,
     };
@@ -932,7 +977,7 @@ export const getServerSideProps: GetServerSideProps = async ({
   }
 
   const resJugadores = await fetch(
-    `${process.env.BACKEND_URL}/jugador/query?sessionToken=${token}`
+    `${process.env.BACKEND_URL}/jugador/admin/query?sessionToken=${token}`
   );
   const jugadores = await resJugadores.json();
 
@@ -952,7 +997,7 @@ export const getServerSideProps: GetServerSideProps = async ({
   }
 
   const resDts = await fetch(
-    `${process.env.BACKEND_URL}/dt/query?sessionToken=${token}`
+    `${process.env.BACKEND_URL}/dt/admin/query?sessionToken=${token}`
   );
   const dts = await resDts.json();
 
@@ -975,7 +1020,7 @@ export const getServerSideProps: GetServerSideProps = async ({
   return {
     props: {
       plantillas,
-      club,
+      clubes,
       token,
       plantillasYClub: plantillasYClubJson,
       listaJugadores: jugadores,

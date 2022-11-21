@@ -225,7 +225,7 @@ export type JugadorRow = {
   posicion: string;
   piernaBuena: string;
   edad: string;
-  club: string;
+  club: Club;
 };
 
 interface Club {
@@ -251,7 +251,7 @@ export type Jugadores = Jugador[];
 
 type JugadoresPageProps = {
   jugadores?: Jugadores;
-  club?: Club;
+  clubes?: Club[];
   token?: string;
   criticalError?: string;
   isAdmin?: boolean;
@@ -259,7 +259,7 @@ type JugadoresPageProps = {
 
 function JugadoresPage({
   jugadores = [],
-  club,
+  clubes = [],
   token = "",
   criticalError,
   isAdmin,
@@ -312,6 +312,15 @@ function JugadoresPage({
       {
         header: "Club",
         accessorKey: "club",
+        cell: ({ row }) => (
+          <div>
+            {/* @ts-ignore */}
+            <div key={row.getValue("club").id}>
+              {/* @ts-ignore */}
+              {row.getValue("club").nombre}
+            </div>
+          </div>
+        ),
       },
     ],
     []
@@ -325,7 +334,7 @@ function JugadoresPage({
     posicion: jugador.posicion,
     piernaBuena: jugador.piernaBuena,
     edad: jugador.edad.toString(),
-    club: club?.nombre,
+    club: clubes.find((club) => club.id === jugador.clubID),
   }));
 
   const [data, setData] = useState(jugadoresYClub);
@@ -343,6 +352,7 @@ function JugadoresPage({
     value: string;
   }>();
   const [edad, setEdad] = useState("");
+  const [club, setClub] = useState<Club>();
 
   const columns = useMemo(() => COLUMNS, []);
   const [rowSelection, setRowSelection] = useState({});
@@ -376,6 +386,7 @@ function JugadoresPage({
     setPosicion(POSICIONES.find((value) => value.value === row.posicion));
     setPiernaBuena(PIERNAS.find((value) => value.value === row.piernaBuena));
     setEdad(row.edad);
+    setClub(row.club);
     setIsAdding(false);
     setIsEditing(true);
   };
@@ -394,6 +405,7 @@ function JugadoresPage({
     setPosicion(undefined);
     setPiernaBuena(undefined);
     setEdad("");
+    setClub(undefined);
     setErrorMessage("");
     setIsAdding(false);
     setIsEditing(false);
@@ -409,12 +421,12 @@ function JugadoresPage({
         liga,
         posicion: posicion?.value,
         piernaBuena: piernaBuena?.value,
-        clubID: club.id,
+        clubID: club?.id,
       };
 
       renderToast("loading", "Guardando jugador modificado");
       const res = await fetch(
-        `${process.env.BACKEND_URL}/jugador/query?sessionToken=${token}`,
+        `${process.env.BACKEND_URL}/jugador/admin/query?sessionToken=${token}`,
         {
           method: "POST",
           body: JSON.stringify(jugador),
@@ -444,12 +456,12 @@ function JugadoresPage({
         liga,
         posicion: posicion?.value,
         piernaBuena: piernaBuena?.value,
-        clubID: club.id,
+        clubID: club?.id,
       };
 
       renderToast("loading", "Guardando jugador nuevo");
       const res = await fetch(
-        `${process.env.BACKEND_URL}/jugador/query?sessionToken=${token}`,
+        `${process.env.BACKEND_URL}/jugador/admin/query?sessionToken=${token}`,
         {
           method: "POST",
           body: JSON.stringify(jugador),
@@ -479,7 +491,7 @@ function JugadoresPage({
     renderToast("loading", "Eliminando jugador");
     try {
       const resEliminarJugadores = await fetch(
-        `${process.env.BACKEND_URL}/jugador/${id}/query?sessionToken=${token}`,
+        `${process.env.BACKEND_URL}/jugador/admin/${id}/query?sessionToken=${token}`,
         {
           method: "delete",
         }
@@ -673,6 +685,26 @@ function JugadoresPage({
                 setNacionalidad(event.target.value);
               }}
             />
+            <div style={styles.maybeTitle}>Club</div>
+            <div
+              style={{
+                minWidth: "50%",
+                width: "50%",
+                height: "100px",
+                display: "flex",
+                alignContent: "center",
+                alignItems: "center",
+                alignSelf: "center",
+              }}
+            >
+              <DropdownList
+                data={clubes}
+                dataKey="id"
+                textField="nombre"
+                value={club}
+                onChange={setClub}
+              />
+            </div>
             <div style={styles.maybeTitle}>Posicion</div>
             <div
               style={{
@@ -769,19 +801,19 @@ export const getServerSideProps: GetServerSideProps = async ({
 
   const token = await getToken({ req, raw: true });
 
-  const resClub = await fetch(
-    `${process.env.BACKEND_URL}/club/query?sessionToken=${token}`
+  const resClubes = await fetch(
+    `${process.env.BACKEND_URL}/club/admin/query?sessionToken=${token}`
   );
-  const club = await resClub.json();
+  const clubes = await resClubes.json();
 
-  if (!resClub.ok) {
+  if (!resClubes.ok) {
     if (
-      club.message === ERRORES.NO_CLUB ||
-      club.message === ERRORES.NO_SESSION
+      clubes.message === ERRORES.NO_CLUB ||
+      clubes.message === ERRORES.NO_SESSION
     ) {
       return {
         props: {
-          criticalError: club.message,
+          criticalError: clubes.message,
           //@ts-ignore
           isAdmin: session.session.isAdmin,
         },
@@ -790,7 +822,7 @@ export const getServerSideProps: GetServerSideProps = async ({
   }
 
   const resJugadores = await fetch(
-    `${process.env.BACKEND_URL}/jugador/query?sessionToken=${token}`
+    `${process.env.BACKEND_URL}/jugador/admin/query?sessionToken=${token}`
   );
   const jugadores = await resJugadores.json();
 
@@ -813,7 +845,7 @@ export const getServerSideProps: GetServerSideProps = async ({
   return {
     props: {
       jugadores,
-      club,
+      clubes,
       token,
       //@ts-ignore
       isAdmin: session.session.isAdmin,
