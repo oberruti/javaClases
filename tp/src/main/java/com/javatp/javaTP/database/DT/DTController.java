@@ -20,6 +20,7 @@ import com.javatp.javaTP.database.Club.Club;
 import com.javatp.javaTP.database.Club.ClubRepository;
 import com.javatp.javaTP.database.Plantilla.PlantillaController;
 import com.javatp.javaTP.database.Sessions.Sessions;
+import com.javatp.javaTP.database.Sessions.SessionsController;
 import com.javatp.javaTP.database.Sessions.SessionsRepository;
 import com.javatp.javaTP.exception.ApiRequestException;
 
@@ -40,6 +41,9 @@ public class DtController {
 
     @Autowired
     private PlantillaController plantillaController;
+
+    @Autowired
+    private SessionsController sessionsController;
 
     private Sessions getSessionByToken(String sessionToken ) {
         try {
@@ -68,6 +72,20 @@ public class DtController {
             return (ArrayList<Dt>) dtRepository.findByClubID(club.getId());
         } catch(RuntimeException e) {
             throw new ApiRequestException("Error - no existen dtes");
+        }
+    }
+
+    @CrossOrigin("*")
+    @GetMapping("/admin/query")
+    public ArrayList<Dt> getDtesAdmin(@RequestParam(name = "sessionToken", required = true ) String sessionToken ) {
+        if (sessionsController.isAdmin(sessionToken)) {
+            try {
+                return (ArrayList<Dt>) dtRepository.findAll();
+            } catch(RuntimeException e) {
+                throw new ApiRequestException("Error - no existen dtes");
+            }
+        } else {
+            throw new ApiRequestException("Error - usted no esta autenticado");
         }
     }
 
@@ -120,6 +138,42 @@ public class DtController {
             return true;
         } catch(Exception err) {
             throw new ApiRequestException("Error - No se pudo eliminar el dt");
+        }
+    }
+
+    @CrossOrigin("*")
+    @PostMapping("/admin/query")
+    public Dt saveDtAdmin(@RequestBody Dt dt, @RequestParam(name = "sessionToken", required = true ) String sessionToken ) {
+        if (sessionsController.isAdmin(sessionToken)) {
+            if (dt.getClubID().isEmpty() || dt.getLiga().isEmpty() || dt.getNacionalidad().isEmpty() || dt.getNombre().isEmpty()) {
+                throw new ApiRequestException("Error - campos incorrectos");
+            }
+            try {
+                return (Dt)dtRepository.save(dt); 
+            } catch(RuntimeException e) {
+                throw new ApiRequestException("Error - no se pudo guardar el dt");
+            }
+        } else {
+            throw new ApiRequestException("Error - usted no esta autorizado");
+        }
+    }
+
+    @CrossOrigin("*")
+    @DeleteMapping(path = "/{id}/admin/query")
+    public boolean deleteDtAdmin(@PathVariable("id") String id, @RequestParam(name = "sessionToken", required = true ) String sessionToken ) {
+        if (sessionsController.isAdmin(sessionToken)) {
+            if (id.isEmpty()) {
+                throw new ApiRequestException("Error - campos incorrectos");
+            }
+            try {
+                plantillaController.deleteDTFromPlantillasAdmin(id, sessionToken);
+                dtRepository.deleteById(id);
+                return true;
+            } catch(Exception err) {
+                throw new ApiRequestException("Error - No se pudo eliminar el dt");
+            }
+        } else {
+            throw new ApiRequestException("Error - usted no esta autorizado");
         }
     }
 

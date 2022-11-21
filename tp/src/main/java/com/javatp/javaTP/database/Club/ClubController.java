@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -53,8 +54,27 @@ public class ClubController {
     }
 
     @CrossOrigin("*")
+    @GetMapping("/admin/query/{id}")
+    public Club clubAdmin(@PathVariable("id") String id, @RequestParam(name = "sessionToken", required = true ) String sessionToken) {   
+        if (this.sessionsController.isAdmin(sessionToken)) {
+            if (id.isEmpty()) {
+                throw new ApiRequestException("Error - Parametros incorrectos");
+            }
+            try {
+                Club club = clubRepository.findById(id).get();
+                return club;
+            } catch (RuntimeException eClub) {
+                throw new ApiRequestException("Error - No existe club asociado");
+            }
+        } else {
+            throw new ApiRequestException("Error - No puede acceder a esta informacion");
+        }
+            
+    }
+
+    @CrossOrigin("*")
     @GetMapping("/admin/query")
-    public List<Club> clubAdmin(@RequestParam(name = "sessionToken", required = true ) String sessionToken ) {   
+    public List<Club> clubesAdmin(@RequestParam(name = "sessionToken", required = true ) String sessionToken ) {   
         if (this.sessionsController.isAdmin(sessionToken)) {
             try {
                 List<Club> club = clubRepository.findAll();

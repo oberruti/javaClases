@@ -25,6 +25,7 @@ import com.javatp.javaTP.database.Plantilla.Plantilla;
 import com.javatp.javaTP.database.Plantilla.PlantillaController;
 import com.javatp.javaTP.database.Plantilla.PlantillaRepository;
 import com.javatp.javaTP.database.Sessions.Sessions;
+import com.javatp.javaTP.database.Sessions.SessionsController;
 import com.javatp.javaTP.database.Sessions.SessionsRepository;
 import com.javatp.javaTP.exception.ApiRequestException;
 
@@ -39,6 +40,9 @@ public class JugadorController {
 
     @Autowired
     private SessionsRepository sessionsRepository;
+
+    @Autowired
+    private SessionsController sessionsController;
 
     @Autowired
     private ClubRepository clubRepository;
@@ -68,6 +72,7 @@ public class JugadorController {
         }
     }
     
+    @CrossOrigin("*")
     @GetMapping("/query")
     public ArrayList<Jugador> getJugadores(@RequestParam(name = "sessionToken", required = true ) String sessionToken ) {
         Club club = getClubBySessionToken(sessionToken);
@@ -75,6 +80,20 @@ public class JugadorController {
             return (ArrayList<Jugador>) jugadorRepository.findByClubID(club.getId());
         } catch(RuntimeException e) {
             throw new ApiRequestException("Error - no existen jugadores");
+        }
+    }
+
+    @CrossOrigin("*")
+    @GetMapping("/admin/query")
+    public ArrayList<Jugador> getJugadoresAdmin(@RequestParam(name = "sessionToken", required = true ) String sessionToken ) {
+        if (sessionsController.isAdmin(sessionToken)) {
+            try {
+                return (ArrayList<Jugador>) jugadorRepository.findAll();
+            } catch(RuntimeException e) {
+                throw new ApiRequestException("Error - no existen jugadores");
+            }
+        } else {
+            throw new ApiRequestException("Error - usted no esta autenticado");
         }
     }
 
@@ -95,6 +114,25 @@ public class JugadorController {
         } catch(RuntimeException e) {
             throw new ApiRequestException("Error - no se pudo guardar el jugador");
         }
+    }
+
+    @CrossOrigin("*")
+    @PostMapping("/admin/query")
+    public Jugador saveJugadorAdmin(@RequestBody Jugador jugador, @RequestParam(name = "sessionToken", required = true ) String sessionToken ) {
+        if (sessionsController.isAdmin(sessionToken))
+        {
+            if (jugador.clubID.isEmpty() || jugador.edad == null || jugador.liga.isEmpty() || jugador.nacionalidad.isEmpty() || jugador.nombre.isEmpty() || jugador.piernaBuena == null || jugador.posicion == null) {
+                throw new ApiRequestException("Error - campos incorrectos");
+            }
+            try {
+                return (Jugador)jugadorRepository.save(jugador);
+            } catch(RuntimeException e) {
+                throw new ApiRequestException("Error - no se pudo guardar el jugador");
+            }
+        } else {
+            throw new ApiRequestException("Error - usted no esta autorizado");
+        }
+       
     }
 
     private Plantilla getPlantillaById(String id) {
@@ -158,6 +196,26 @@ public class JugadorController {
         } catch(Exception err) {
             throw new ApiRequestException("Error - No se pudo eliminar el jugador");
         }
+    }
+
+    @CrossOrigin("*")
+    @DeleteMapping(path = "/admin/{id}/query")
+    public boolean deleteJugadorAdmin(@PathVariable("id") String id, @RequestParam(name = "sessionToken", required = true ) String sessionToken ) {
+        if (sessionsController.isAdmin(sessionToken)) {
+            if (id.isEmpty()) {
+                throw new ApiRequestException("Error - campos incorrectos");
+            }
+            try {
+                    plantillaController.deleteJugadorFromPlantillasAdmin(id, sessionToken);
+                    jugadorRepository.deleteById(id);
+                    return true;
+            } catch(Exception err) {
+                throw new ApiRequestException("Error - No se pudo eliminar el jugador");
+            }
+        } else {
+            throw new ApiRequestException("Error - usted no esta autorizado");
+        }
+        
     }
 
 }
