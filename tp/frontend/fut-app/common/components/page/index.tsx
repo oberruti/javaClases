@@ -9,7 +9,12 @@ import { signOut } from "next-auth/react";
 import { v4 } from "uuid";
 import { ToastContainer } from "react-toastify";
 
-export function Menu(props: { name: string; id: string }): JSX.Element {
+export function Menu(props: {
+  name: string;
+  id: string;
+  isAdmin?: boolean;
+}): JSX.Element {
+  const isAdmin = !!props.isAdmin || false;
   const dimensions: CSSProperties = {
     marginTop: "20px",
     alignSelf: "center",
@@ -27,7 +32,13 @@ export function Menu(props: { name: string; id: string }): JSX.Element {
   };
   return (
     <div style={dimensions} key={props.id}>
-      <Link href={props.name}>
+      <Link
+        href={
+          isAdmin && props.name != PAGES.DASHBOARD
+            ? `/app/admin/${props.name}`
+            : props.name
+        }
+      >
         <div style={linkStyle}>
           {props.name === "listadoJugadoresPorPlantilla"
             ? "Listado Jug".toUpperCase()
@@ -73,7 +84,7 @@ export const Logout = (): JSX.Element => {
   );
 };
 
-export function Navigation(): JSX.Element {
+export function Navigation({ isAdmin }: { isAdmin?: boolean }): JSX.Element {
   const style: CSSProperties = {
     backgroundColor: COLORS.blue,
     width: "150px",
@@ -88,7 +99,7 @@ export function Navigation(): JSX.Element {
   return (
     <div style={style}>
       {Object.values(PAGES).map((page) => (
-        <Menu name={page} id={v4()} />
+        <Menu isAdmin={isAdmin} name={page} id={v4()} />
       ))}
       <Logout />
     </div>
@@ -104,7 +115,11 @@ function AppContent(props: JustChildren): JSX.Element {
   return <div style={style}>{props.children}</div>;
 }
 
-export const Layout = (props: JustChildren): JSX.Element => {
+interface LayoutProps extends JustChildren {
+  isAdmin?: boolean;
+}
+
+export const Layout = (props: LayoutProps): JSX.Element => {
   const style: CSSProperties = {
     position: "absolute",
     backgroundColor: COLORS.blue,
@@ -120,7 +135,7 @@ export const Layout = (props: JustChildren): JSX.Element => {
   };
   return (
     <HorizontalStack style={style}>
-      <Navigation />
+      <Navigation isAdmin={props.isAdmin} />
       <AppContent>
         <ToastContainer
           position="bottom-center"
