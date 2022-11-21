@@ -162,6 +162,26 @@ public class JugadorController {
     }
 
     @CrossOrigin("*")
+    @GetMapping(path = "/{id}/{posicion}/admin/query")
+    public Stream<Jugador> jugadorIdealPosicionAdmin(@PathVariable("id") String id,@PathVariable("posicion") String posicion, @RequestParam(name = "sessionToken", required = true ) String sessionToken ) {
+        if (sessionsController.isAdmin(sessionToken)) {
+            if (id.isEmpty() || posicion.isEmpty()) {
+                throw new ApiRequestException("Error - campos incorrectos");
+            }
+            Plantilla plantilla = getPlantillaById(id);
+            List<Jugador> jugadoresList = this.getJugadoresAdmin(sessionToken);
+            String[] jugadoresEnPlantillaArray = plantilla.getJugadoresIDs();
+            List<String> jugadoresEnPlantilla = Arrays.asList(jugadoresEnPlantillaArray);
+            Stream<Jugador> jugadoresFiltrados = jugadoresList.stream().filter(jugador -> jugadoresEnPlantilla.contains(jugador.id) == false);
+            Stream<Jugador> jugadoresFiltradosPorPosicion = jugadoresFiltrados.filter(jugador -> jugador.getPosicion().compareTo(posicion) == 0);
+    
+            return jugadoresFiltradosPorPosicion;
+        } else {
+            throw new ApiRequestException("Error - usted no esta autorizado");
+        }
+    }
+
+    @CrossOrigin("*")
     @GetMapping(path = "/{id}/query")
     public Optional<Jugador> jugadorByClubId(@PathVariable("id") String id, @RequestParam(name = "sessionToken", required = true ) String sessionToken ) {
         if (id.isEmpty()) {
