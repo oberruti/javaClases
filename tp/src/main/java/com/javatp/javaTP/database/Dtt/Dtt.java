@@ -1,9 +1,9 @@
-package com.javatp.javaTP.database.Dt;
+package com.javatp.javaTP.database.Dtt;
 
 import org.springframework.data.annotation.Id;
 
 
-public class Dt {
+public class Dtt {
 
   @Id
   private String id;
@@ -14,9 +14,9 @@ public class Dt {
 
   private String clubID;
 
-  public Dt() {}
+  public Dtt() {}
 
-  public Dt(String nombre, String liga, String nacionalidad, String clubID) {
+  public Dtt(String nombre, String liga, String nacionalidad, String clubID) {
     this.nombre = nombre;
     this.liga = liga;
     this.nacionalidad = nacionalidad;

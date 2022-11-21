@@ -21,8 +21,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.javatp.javaTP.database.Club.Club;
 import com.javatp.javaTP.database.Club.ClubRepository;
-import com.javatp.javaTP.database.Dt.DtRepository;
-import com.javatp.javaTP.database.Dt.Dt;
+import com.javatp.javaTP.database.Dtt.Dtt;
+import com.javatp.javaTP.database.Dtt.DttRepository;
 import com.javatp.javaTP.database.Jugador.Jugador;
 import com.javatp.javaTP.database.Jugador.JugadorRepository;
 import com.javatp.javaTP.database.Sessions.Sessions;
@@ -50,7 +50,7 @@ public class PlantillaController {
     private JugadorRepository jugadorRepository;
 
     @Autowired
-    private DtRepository dtRepository;
+    private DttRepository dtRepository;
 
     @Autowired
     private SessionsController sessionsController;
@@ -209,7 +209,7 @@ public class PlantillaController {
 
     @CrossOrigin("*")
     @GetMapping(path = "/{id}/dt/query")
-    public Dt getDTByPlantillaId(@PathVariable("id") String id, @RequestParam(name = "sessionToken", required = true ) String sessionToken ) {
+    public Dtt getDTByPlantillaId(@PathVariable("id") String id, @RequestParam(name = "sessionToken", required = true ) String sessionToken ) {
         if (id.isEmpty()) {
             throw new ApiRequestException("Error - Parametros incorrectos");
         }
@@ -218,7 +218,7 @@ public class PlantillaController {
              String dtID = plantilla.getDtId();
              if (dtID != null && dtID.compareTo("") != 0 ) {
                 try {
-                    Dt dt = dtRepository.getDTById(dtID).get();
+                    Dtt dt = dtRepository.getDTById(dtID).get();
                     return dt;
                 } catch(RuntimeException e) {
                     throw new ApiRequestException("Error - No se encontro dt");
@@ -229,7 +229,7 @@ public class PlantillaController {
 
     @CrossOrigin("*")
     @GetMapping(path = "/{id}/admin/dt/query")
-    public Dt getDTByPlantillaIdAdmin(@PathVariable("id") String id, @RequestParam(name = "sessionToken", required = true ) String sessionToken ) {
+    public Dtt getDTByPlantillaIdAdmin(@PathVariable("id") String id, @RequestParam(name = "sessionToken", required = true ) String sessionToken ) {
         if (id.isEmpty()) {
             throw new ApiRequestException("Error - Parametros incorrectos");
         }
@@ -239,7 +239,7 @@ public class PlantillaController {
             String dtID = plantilla.getDtId();
             if (dtID != null && dtID.compareTo("") != 0 ) {
                try {
-                   Dt dt = dtRepository.getDTById(dtID).get();
+                   Dtt dt = dtRepository.getDTById(dtID).get();
                    return dt;
                } catch(RuntimeException e) {
                    throw new ApiRequestException("Error - No se encontro dt");

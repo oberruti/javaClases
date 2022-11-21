@@ -1,4 +1,4 @@
-package com.javatp.javaTP.database.Dt;
+package com.javatp.javaTP.database.Dtt;
 
 import java.util.ArrayList;
 import java.util.Optional;
@@ -9,13 +9,13 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 
 //examples https://javatechonline.com/spring-boot-mongodb-query-examples/
-public interface DtRepository extends MongoRepository<Dt, String> {
+public interface DttRepository extends MongoRepository<Dtt, String> {
 
   @Query("{id :?0}")
-  Optional<Dt> getDTById(String id);
+  Optional<Dtt> getDTById(String id);
 
-  ArrayList<Dt> findByClubID(String ClubID);
+  ArrayList<Dtt> findByClubID(String ClubID);
 
-  Optional<Dt> findByIdAndClubID(String id, String ClubID);
+  Optional<Dtt> findByIdAndClubID(String id, String ClubID);
 
 }

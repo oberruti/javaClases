@@ -1,4 +1,4 @@
-package com.javatp.javaTP.database.Dt;
+package com.javatp.javaTP.database.Dtt;
 
 
 
@@ -29,9 +29,9 @@ import com.javatp.javaTP.exception.ApiRequestException;
 
 @RestController
 @RequestMapping("/dt")
-public class DtController {
+public class DttController {
     @Autowired
-    private DtRepository dtRepository;
+    private DttRepository dtRepository;
 
     @Autowired
     private SessionsRepository sessionsRepository;
@@ -66,10 +66,10 @@ public class DtController {
     
     @CrossOrigin("*")
     @GetMapping("/query")
-    public ArrayList<Dt> getDtes(@RequestParam(name = "sessionToken", required = true ) String sessionToken ) {
+    public ArrayList<Dtt> getDtes(@RequestParam(name = "sessionToken", required = true ) String sessionToken ) {
         Club club = getClubBySessionToken(sessionToken);
         try {
-            return (ArrayList<Dt>) dtRepository.findByClubID(club.getId());
+            return (ArrayList<Dtt>) dtRepository.findByClubID(club.getId());
         } catch(RuntimeException e) {
             throw new ApiRequestException("Error - no existen dtes");
         }
@@ -77,10 +77,10 @@ public class DtController {
 
     @CrossOrigin("*")
     @GetMapping("/admin/query")
-    public ArrayList<Dt> getDtesAdmin(@RequestParam(name = "sessionToken", required = true ) String sessionToken ) {
+    public ArrayList<Dtt> getDtesAdmin(@RequestParam(name = "sessionToken", required = true ) String sessionToken ) {
         if (sessionsController.isAdmin(sessionToken)) {
             try {
-                return (ArrayList<Dt>) dtRepository.findAll();
+                return (ArrayList<Dtt>) dtRepository.findAll();
             } catch(RuntimeException e) {
                 throw new ApiRequestException("Error - no existen dtes");
             }
@@ -91,7 +91,7 @@ public class DtController {
 
     @CrossOrigin("*")
     @PostMapping("/query")
-    public Dt saveDt(@RequestBody Dt dt, @RequestParam(name = "sessionToken", required = true ) String sessionToken ) {
+    public Dtt saveDt(@RequestBody Dtt dt, @RequestParam(name = "sessionToken", required = true ) String sessionToken ) {
         if (dt.getClubID().isEmpty() || dt.getLiga().isEmpty() || dt.getNacionalidad().isEmpty() || dt.getNombre().isEmpty()) {
             throw new ApiRequestException("Error - campos incorrectos");
         }
@@ -100,7 +100,7 @@ public class DtController {
             String idOne = club.getId();
             String idTwo = dt.getClubID();
             if (idOne.compareTo(idTwo) == 0) {
-                return (Dt)dtRepository.save(dt);
+                return (Dtt)dtRepository.save(dt);
             }
             throw new ApiRequestException("Error - no se puede guardar un dt en otro club");
         } catch(RuntimeException e) {
@@ -110,13 +110,13 @@ public class DtController {
 
     @CrossOrigin("*")
     @GetMapping(path = "/{id}/query")
-    public Optional<Dt> dtByClubId(@PathVariable("id") String id, @RequestParam(name = "sessionToken", required = true ) String sessionToken ) {
+    public Optional<Dtt> dtByClubId(@PathVariable("id") String id, @RequestParam(name = "sessionToken", required = true ) String sessionToken ) {
         if (id.isEmpty()) {
             throw new ApiRequestException("Error - campos incorrectos");
         }
         Club club = getClubBySessionToken(sessionToken);
         try {
-            return (Optional<Dt>) dtRepository.findByIdAndClubID(id, club.getId());
+            return (Optional<Dtt>) dtRepository.findByIdAndClubID(id, club.getId());
         } catch(RuntimeException e) {
             throw new ApiRequestException("Error - No se pudo encontrar el dt de ese club");
         }
@@ -143,13 +143,13 @@ public class DtController {
 
     @CrossOrigin("*")
     @PostMapping("/admin/query")
-    public Dt saveDtAdmin(@RequestBody Dt dt, @RequestParam(name = "sessionToken", required = true ) String sessionToken ) {
+    public Dtt saveDtAdmin(@RequestBody Dtt dt, @RequestParam(name = "sessionToken", required = true ) String sessionToken ) {
         if (sessionsController.isAdmin(sessionToken)) {
             if (dt.getClubID().isEmpty() || dt.getLiga().isEmpty() || dt.getNacionalidad().isEmpty() || dt.getNombre().isEmpty()) {
                 throw new ApiRequestException("Error - campos incorrectos");
             }
             try {
-                return (Dt)dtRepository.save(dt); 
+                return (Dtt)dtRepository.save(dt); 
             } catch(RuntimeException e) {
                 throw new ApiRequestException("Error - no se pudo guardar el dt");
             }
