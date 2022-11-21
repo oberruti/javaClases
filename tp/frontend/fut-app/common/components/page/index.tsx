@@ -33,6 +33,10 @@ export function Menu(props: { name: string; id: string }): JSX.Element {
             ? "Listado Jug".toUpperCase()
             : props.name === "jugadorIdeal"
             ? "Jugador Ideal".toUpperCase()
+            : props.name === "listadoDTsPorNac"
+            ? "Listado DTS".toUpperCase()
+            : props.name === "dtIdeal"
+            ? "DT IDEAL".toUpperCase()
             : props.name.toUpperCase()}
         </div>
       </Link>

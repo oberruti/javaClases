@@ -5,6 +5,8 @@ export const PAGES = {
   JUGADORES: 'jugadores',
   LISTADO_JUGADORES_POR_PLANTILLA: 'listadoJugadoresPorPlantilla',
   JUGADOR_IDEAL: 'jugadorIdeal',
+  LISTADO_DTS_POR_NACIONALIDAD: 'listadoDTsPorNac',
+  DT_IDEAL: 'dtIdeal',
   DTS: 'dts',
 };
 
