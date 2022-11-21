@@ -183,7 +183,7 @@ function Filter({
   );
 }
 
-interface Club {
+export interface Club {
   id: string;
   nombre: string;
   sigla: string;
