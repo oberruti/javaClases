@@ -19,12 +19,12 @@ import {
   VerticalStack,
 } from "../../../../common/components/flex";
 import { StyleMap } from "../../../../common/utils/tsTypes";
-import { Jugadores, JugadorRow } from "../jugadores";
 import { DropdownList } from "react-widgets";
 import ErrorMessage from "../../../../common/components/ErrorMessage";
 import { ERRORES } from "../../../../common/components/page/utils";
 import { DT, DTs } from "../dts";
 import { v4 } from "uuid";
+import { Club } from "../club";
 
 const styles: StyleMap = {
   input: {
@@ -163,11 +163,13 @@ function Filter({
 type ListadoDTsPorNacPageProps = {
   criticalError?: string;
   dts?: DTs;
+  clubes?: Club[];
   isAdmin?: boolean;
 };
 
 function ListadoDTsPorNacPage({
   dts = [],
+  clubes = [],
   criticalError,
   isAdmin,
 }: ListadoDTsPorNacPageProps) {
@@ -184,6 +186,19 @@ function ListadoDTsPorNacPage({
       {
         header: "Nacionalidad",
         accessorKey: "nacionalidad",
+      },
+      {
+        header: "Club",
+        accessorKey: "club",
+        cell: ({ row }) => (
+          <div>
+            {/* @ts-ignore */}
+            <div key={row.getValue("club")?.id}>
+              {/* @ts-ignore */}
+              {row.getValue("club")?.nombre}
+            </div>
+          </div>
+        ),
       },
     ],
     []
@@ -211,15 +226,22 @@ function ListadoDTsPorNacPage({
     }
   });
 
-  const [data, setData] = useState(dts);
+  const dtsWithClub = dts.map((dt: DT) => ({
+    ...dt,
+    club: clubes.find((club: Club) => club.id === dt.clubID),
+  }));
+
+  const [data, setData] = useState(dtsWithClub);
 
   const columns = useMemo(() => COLUMNS, []);
 
   const onChange = (value) => {
     setErrorMessage(undefined);
-    setData(dts);
+    setData(dtsWithClub);
     setNacionalidadSelected(value);
-    const dtsFiltered = dts.filter((dt) => dt.nacionalidad === value.value);
+    const dtsFiltered = dtsWithClub.filter(
+      (dt) => dt.nacionalidad === value.value
+    );
     if (dtsFiltered.length > 0) {
       setData(dtsFiltered);
     } else {
@@ -379,19 +401,19 @@ export const getServerSideProps: GetServerSideProps = async ({
 
   const token = await getToken({ req, raw: true });
 
-  const resClub = await fetch(
-    `${process.env.BACKEND_URL}/club/query?sessionToken=${token}`
+  const resClubes = await fetch(
+    `${process.env.BACKEND_URL}/club/admin/query?sessionToken=${token}`
   );
-  const club = await resClub.json();
+  const clubes = await resClubes.json();
 
-  if (!resClub.ok) {
+  if (!resClubes.ok) {
     if (
-      club.message === ERRORES.NO_CLUB ||
-      club.message === ERRORES.NO_SESSION
+      clubes.message === ERRORES.NO_CLUB ||
+      clubes.message === ERRORES.NO_SESSION
     ) {
       return {
         props: {
-          criticalError: club.message,
+          criticalError: clubes.message,
           //@ts-ignore
           isAdmin: session.session.isAdmin,
         },
@@ -400,7 +422,7 @@ export const getServerSideProps: GetServerSideProps = async ({
   }
 
   const resDTs = await fetch(
-    `${process.env.BACKEND_URL}/dt/query?sessionToken=${token}`
+    `${process.env.BACKEND_URL}/dt/admin/query?sessionToken=${token}`
   );
   const dts = await resDTs.json();
 
@@ -420,6 +442,7 @@ export const getServerSideProps: GetServerSideProps = async ({
   return {
     props: {
       dts,
+      clubes,
       //@ts-ignore
       isAdmin: session.session.isAdmin,
     },

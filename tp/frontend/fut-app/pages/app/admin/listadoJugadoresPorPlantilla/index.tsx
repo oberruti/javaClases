@@ -23,6 +23,7 @@ import { Jugadores, JugadorRow } from "../jugadores";
 import { DropdownList } from "react-widgets";
 import ErrorMessage from "../../../../common/components/ErrorMessage";
 import { ERRORES } from "../../../../common/components/page/utils";
+import { Club } from "../club";
 
 const styles: StyleMap = {
   input: {
@@ -163,7 +164,7 @@ type PlantillaRow = {
   nombre: string;
   tactica: string;
   esTitular: boolean;
-  club: string;
+  club: Club;
   jugadores: Jugadores;
 };
 
@@ -207,6 +208,15 @@ function listadoJugadoresPorPlantillaPage({
       {
         header: "Club",
         accessorKey: "club",
+        cell: ({ row }) => (
+          <div>
+            {/* @ts-ignore */}
+            <div key={row.getValue("club")?.id}>
+              {/* @ts-ignore */}
+              {row.getValue("club")?.nombre}
+            </div>
+          </div>
+        ),
       },
     ],
     []
@@ -288,7 +298,7 @@ function listadoJugadoresPorPlantillaPage({
           <DropdownList
             data={plantillasYClub.map((object) => ({
               id: object.id,
-              value: `${object.nombre} - ${object.club} - ${object.tactica}`,
+              value: `${object.nombre} - ${object.club.nombre} - ${object.tactica}`,
             }))}
             dataKey="id"
             textField="value"
@@ -397,19 +407,19 @@ export const getServerSideProps: GetServerSideProps = async ({
 
   const token = await getToken({ req, raw: true });
 
-  const resClub = await fetch(
-    `${process.env.BACKEND_URL}/club/query?sessionToken=${token}`
+  const resClubes = await fetch(
+    `${process.env.BACKEND_URL}/club/admin/query?sessionToken=${token}`
   );
-  const club = await resClub.json();
+  const clubes = await resClubes.json();
 
-  if (!resClub.ok) {
+  if (!resClubes.ok) {
     if (
-      club.message === ERRORES.NO_CLUB ||
-      club.message === ERRORES.NO_SESSION
+      clubes.message === ERRORES.NO_CLUB ||
+      clubes.message === ERRORES.NO_SESSION
     ) {
       return {
         props: {
-          criticalError: club.message,
+          criticalError: clubes.message,
           //@ts-ignore
           isAdmin: session.session.isAdmin,
         },
@@ -418,7 +428,7 @@ export const getServerSideProps: GetServerSideProps = async ({
   }
 
   const resPlantillas = await fetch(
-    `${process.env.BACKEND_URL}/plantilla/query?sessionToken=${token}`
+    `${process.env.BACKEND_URL}/plantilla/admin/query?sessionToken=${token}`
   );
   const plantillas = await resPlantillas.json();
 
@@ -439,7 +449,7 @@ export const getServerSideProps: GetServerSideProps = async ({
 
   const getJugadoresByPlantillaID = async (id: String) => {
     const jugadoresByPlantillaIdRes = await fetch(
-      `${process.env.BACKEND_URL}/plantilla/${id}/jugadores/query?sessionToken=${token}`
+      `${process.env.BACKEND_URL}/plantilla/${id}/admin/jugadores/query?sessionToken=${token}`
     );
     const jugadoresByPlantillaId = await jugadoresByPlantillaIdRes.json();
 
@@ -467,7 +477,7 @@ export const getServerSideProps: GetServerSideProps = async ({
       nombre: plantilla.nombre,
       tactica: plantilla.tactica,
       esTitular: plantilla.esTitular,
-      club: club.nombre,
+      club: clubes.find((club) => plantilla.clubID === club.id),
       jugadores,
     };
   };
