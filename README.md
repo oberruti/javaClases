@@ -1,6 +1,11 @@
 [PROYECTO DEPLOYADO EN VERCEL](https://java-clases.vercel.app)
 
 
+PARA DOCUMENTACION ABRIR EL ARCHIVO UBICADO EN LA RAIZ DEL REPOSITORIO:
+
+[Documentacion TP Java - Octavio Berruti](https://github.com/oberruti/javaClases/blob/master/Documentacion%20TP%20Java%20-%20Octavio%20Berruti.pdf)
+
+
 
 # Java
 Este repositorio corresponde a la cátedra de Java UTN FRRo.
